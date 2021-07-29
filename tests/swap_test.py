@@ -7,7 +7,7 @@ def transfer(token, amount, whale, to):
 
 
 def test_view(vault_swapper, vault_from, vault_to, amount):
-    print("Estimate: " +vault_from.name()+ " to " + vault_to.name())
+    print("Estimate: " + vault_from.name() + " to " + vault_to.name())
     estimate = vault_swapper.estimate_out(vault_from, vault_to, amount)
     assert estimate > 0
 

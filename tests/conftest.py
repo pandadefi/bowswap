@@ -56,28 +56,34 @@ def user(accounts):
 def vaults(request):
     yield request.param
 
+
 @pytest.fixture()
 def vault_from(vaults):
     yield Contract(vaults[0])
+
 
 @pytest.fixture()
 def vault_to(vaults):
     yield Contract(vaults[1])
 
+
 @pytest.fixture
 def whale(vault_from):
     yield WHALES[vault_from.address]
 
+
 @pytest.fixture
 def amount(vault_from):
     if "USD" in vault_from.name():
-        yield 1000 * 10 ** vault_from.decimals() # 1000 USD
+        yield 1000 * 10 ** vault_from.decimals()  # 1000 USD
     else:
-        yield 0.1 * 10 ** vault_from.decimals() # 0.1 BTC
+        yield 0.1 * 10 ** vault_from.decimals()  # 0.1 BTC
+
 
 @pytest.fixture
 def vault_swapper(gov, VaultSwapper):
     yield gov.deploy(VaultSwapper)
+
 
 @pytest.fixture(scope="function", autouse=True)
 def shared_setup(fn_isolation):
