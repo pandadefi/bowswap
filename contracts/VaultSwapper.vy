@@ -51,8 +51,19 @@ def __init__():
     self.pools[0x4f3E8F405CF5aFC05D68142F3783bDfE13811522] = 0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1
     self.pools[0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a] = 0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a
 
+
 @external
 def swap(from_vault: address, to_vault: address, amount: uint256, min_amount_out: uint256):
+    """
+    @notice swap tokens from one vault to an other
+    @dev Remove funds from a vault, move one side of 
+    the asset from one curve pool to an other and 
+    deposit into the new vault.
+    @param from_vault The vault tokens should be taken from
+    @param to_vault The vault tokens should be deposited to
+    @param amount The amount of tokens you whish to use from the from_vault
+    @param min_amount_out The minimal amount of tokens you would expect from the to_vault
+    """
     underlying: address = Vault(from_vault).token()
     target: address = Vault(to_vault).token()
 
@@ -86,6 +97,13 @@ def swap(from_vault: address, to_vault: address, amount: uint256, min_amount_out
 @view
 @external
 def estimate_out(from_vault: address, to_vault: address, amount: uint256) -> uint256:
+    """
+    @notice estimate the amount of tokens out
+    @param from_vault The vault tokens should be taken from
+    @param to_vault The vault tokens should be deposited to
+    @param amount The amount of tokens you whish to use from the from_vault
+    @return the amount of token shared expected in the to_vault
+    """
     underlying: address = Vault(from_vault).token()
     target: address = Vault(to_vault).token()
 
@@ -107,6 +125,6 @@ def estimate_out(from_vault: address, to_vault: address, amount: uint256) -> uin
     return amount_out * (10 ** Vault(to_vault).decimals()) / pricePerShareTo
 
 @external
-def setMinter(token: address, pool: address):
+def setPool(token: address, pool: address):
     assert(msg.sender == self.management)
     self.pools[token] = pool

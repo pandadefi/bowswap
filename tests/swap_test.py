@@ -27,3 +27,9 @@ def test_swap_revert(user, vault_from, vault_to, whale, vault_swapper, amount):
     vault_from.approve(vault_swapper, amount, {"from": user})
     with brownie.reverts():
         vault_swapper.swap(vault_from, vault_to, amount, amount * 1.1, {"from": user})
+
+
+def test_set_pool(user, vault_from, gov, vault_swapper):
+    with brownie.reverts():
+        vault_swapper.setPool(vault_from, vault_from, {"from": user})
+    vault_swapper.setPool(vault_from, vault_from, {"from": gov})
