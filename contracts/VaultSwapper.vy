@@ -37,12 +37,10 @@ interface Token:
 interface Registry:
     def get_pool_from_lp_token(lp: address) -> address: view
 
-management: public(address)
 registry: public(Registry)
 
 @external
 def __init__():
-    self.management = msg.sender
     self.registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5)
 
 @external
