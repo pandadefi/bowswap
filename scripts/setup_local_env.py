@@ -6,11 +6,11 @@ import click
 TRANSFERS = [
     (
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0x80b41c3e3d5d23ab027837ea9e2d8a91bda9067c",
-        10 * 10 ** 18,
+        "0x6965292e29514e527df092659fb4638dc39e7248",
+        1000 * 10 ** 18,
     ),
     (
-        "0x99fd1378ca799ed6772fe7bcdc9b30b389518962",
+        "0xe9dc63083c464d6edccff23444ff3cfc6886f6fb",
         "0x99fd1378ca799ed6772fe7bcdc9b30b389518962",
         0.2 * 10 ** 18,
     ),
