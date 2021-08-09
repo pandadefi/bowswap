@@ -1,6 +1,7 @@
-# y-crv-metapool-swapper
+# bowswap.finance
 
 Swap between crv-metapool vaults.
+[bowswap.finance](bowswap.finance)
 
 ## Getting started
 
@@ -51,3 +52,8 @@ The address should have recieved one ETH and ycrv tokens for the following vault
 
 - 0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417 (Curve USDP Pool yVault)
 - 0x3c5DF3077BcF800640B5DAE8c91106575a4826E6 (Curve pBTC Pool yVault)
+
+
+## UI
+
+Frontend can be found on https://github.com/TBouder/bowswap_ui
