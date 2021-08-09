@@ -1,7 +1,7 @@
 # bowswap.finance
 
 Swap between crv-metapool vaults.
-[bowswap.finance](bowswap.finance)
+[bowswap.finance](https://bowswap.finance)
 
 ## Getting started
 
