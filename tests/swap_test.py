@@ -3,7 +3,7 @@ import brownie
 
 
 def transfer(token, amount, whale, to):
-    token.transfer(to, amount, {"from": whale})
+    token.transfer(to, amount, {"from": whale, "gas_price": 0})
 
 
 def test_swap(user, vault_from, vault_to, whale, vault_swapper, amount):
