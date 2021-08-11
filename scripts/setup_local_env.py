@@ -1,4 +1,4 @@
-from brownie import VaultSwapper, accounts, network, web3, Contract
+from brownie import MetaVaultSwapper, accounts, network, web3, Contract
 from eth_utils import is_checksum_address
 
 import click
@@ -39,8 +39,8 @@ def get_address(msg: str, default: str = None) -> str:
 def main():
     click.echo(f"You are using the '{network.show_active()}' network")
     dev = accounts[0]
-    swapper = dev.deploy(VaultSwapper)
-    print("VaultSwapper deployed at:" + str(swapper))
+    swapper = dev.deploy(MetaVaultSwapper)
+    print("MetaVaultSwapper deployed at:" + str(swapper))
 
     to = get_address("send seed funds to")
     dev.transfer(to, 1 * 10 ** 18)

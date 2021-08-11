@@ -1,5 +1,13 @@
 {
   "devDependencies": {
-    "hardhat-etherscan-abi": "^0.1.1"
+    "prettier": "^2.3.2",
+    "prettier-plugin-solidity": "^1.0.0-beta.13",
+    "solhint": "^3.3.6",
+    "solhint-plugin-prettier": "^0.0.5"
+  },
+  "scripts": {
+    "format": "prettier --write 'contracts/**/*.sol' --verbose",
+    "format:check": "prettier --check '**/*.*(sol|json)'",
+    "hint": "solhint \"contracts/**/*.sol\""
   }
 }
