@@ -14,29 +14,29 @@ interface LendingPool {
 }
 
 interface ATokenV1 {
-    function underlyingAssetAddress() external returns (address);
+    function underlyingAssetAddress() external view returns (address);
 
     function redeem(uint256 _amount) external;
 }
 
 interface ATokenV2 {
-    function UNDERLYING_ASSET_ADDRESS() external returns (address);
+    function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 }
 
 interface CToken {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
-    function balanceOf(address account) external returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
 
     function allowance(address owner, address spender)
         external
         returns (uint256);
 
-    function underlying() external returns (address);
+    function underlying() external view returns (address);
 }
 
 interface Registry {
-    function latestVault(address) external returns (address);
+    function latestVault(address) external view returns (address);
 }
 
 interface Vault {
