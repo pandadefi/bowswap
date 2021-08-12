@@ -104,14 +104,13 @@ contract YVEmpire {
         uint256 amount = transferToSelf(coin);
         CToken cToken = CToken(coin);
         IERC20 underlying = IERC20(cToken.underlying());
-        Vault vault = Vault(registry.latestVault(address(underlying)));
         require(cToken.redeem(amount) == 0, "!redeem");
 
         depositIntoVault(underlying);
     }
 
     function swapAaveV1(address coin) internal {
-        uint256 amount = transferToSelf(coin);
+        transferToSelf(coin);
         ATokenV1 aToken = ATokenV1(coin);
         IERC20 underlying = IERC20(aToken.underlyingAssetAddress());
         aToken.redeem(type(uint256).max);
@@ -120,7 +119,7 @@ contract YVEmpire {
     }
 
     function swapAaveV2(address coin) internal {
-        uint256 amount = transferToSelf(coin);
+        transferToSelf(coin);
         IERC20 underlying = IERC20(ATokenV2(coin).UNDERLYING_ASSET_ADDRESS());
         lendingPool.withdraw(
             address(underlying),
