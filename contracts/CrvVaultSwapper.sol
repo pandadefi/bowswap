@@ -37,9 +37,13 @@ interface StableSwap {
         uint256 min_amount
     ) external;
 
-    function coins(uint256 i) external view returns (address);
-
     function add_liquidity(uint256[2] calldata amounts, uint256 min_mint_amount)
+        external;
+
+    function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount)
+        external;
+
+    function add_liquidity(uint256[4] calldata amounts, uint256 min_mint_amount)
         external;
 
     function calc_withdraw_one_coin(uint256 _token_amount, int128 i)
@@ -55,13 +59,25 @@ interface StableSwap {
 
 interface Registry {
     function get_pool_from_lp_token(address lp) external view returns (address);
+
+    function get_lp_token(address pool) external view returns (address);
+
+    function get_n_coins(address) external view returns (uint256[2] memory);
+
+    function get_coins(address) external view returns (address[8] memory);
 }
 
 contract CrvVaultSwapper {
     Registry registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
 
+    struct Swap {
+        bool deposit;
+        address pool;
+        uint128 n;
+    }
+
     /**
-        @notice swap tokens from one vault to an other
+        @notice swap tokens from one meta pool vault to an other
         @dev Remove funds from a vault, move one side of 
         the asset from one curve pool to an other and 
         deposit into the new vault.
@@ -70,7 +86,7 @@ contract CrvVaultSwapper {
         @param amount The amount of tokens you whish to use from the from_vault
         @param min_amount_out The minimal amount of tokens you would expect from the to_vault
     */
-    function swap(
+    function metapool_swap(
         address from_vault,
         address to_vault,
         uint256 amount,
@@ -92,20 +108,17 @@ contract CrvVaultSwapper {
             1,
             1
         );
-        uint256 liquidity_amount = IERC20(StableSwap(underlying_pool).coins(1))
-            .balanceOf(address(this));
-        IERC20(StableSwap(underlying_pool).coins(1)).approve(
-            target_pool,
-            liquidity_amount
-        );
+
+        IERC20 underlying_coin = IERC20(registry.get_coins(underlying_pool)[1]);
+        uint256 liquidity_amount = underlying_coin.balanceOf(address(this));
+
+        underlying_coin.approve(target_pool, liquidity_amount);
 
         StableSwap(target_pool).add_liquidity([0, liquidity_amount], 1);
 
         uint256 target_amount = IERC20(target).balanceOf(address(this));
-        if (IERC20(target).allowance(address(this), to_vault) < target_amount) {
-            SafeERC20.safeApprove(IERC20(target), to_vault, 0);
-            SafeERC20.safeApprove(IERC20(target), to_vault, type(uint256).max);
-        }
+        approve(target, to_vault, target_amount);
+
         uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
         require(out >= min_amount_out);
     }
@@ -117,7 +130,7 @@ contract CrvVaultSwapper {
         @param amount The amount of tokens you whish to use from the from_vault
         @return the amount of token shared expected in the to_vault
      */
-    function estimate_out(
+    function metapool_estimate_out(
         address from_vault,
         address to_vault,
         uint256 amount
@@ -144,5 +157,73 @@ contract CrvVaultSwapper {
 
         return
             (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
+    }
+
+    function swap(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        Swap[] calldata instructions
+    ) public {
+        address token = Vault(from_vault).token();
+        address target = Vault(to_vault).token();
+
+        Vault(from_vault).transferFrom(msg.sender, address(this), amount);
+
+        amount = Vault(from_vault).withdraw(amount, address(this));
+        for (uint256 i = 0; i < instructions.length; i++) {
+
+            if (instructions[i].deposit) {
+                uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                uint256[] memory list = new uint256[](n_coins);
+                list[instructions[i].n] = amount;
+                approve(token, instructions[i].pool, amount);
+
+                if (n_coins == 2) {
+                    StableSwap(instructions[i].pool).add_liquidity(
+                        [list[0], list[1]],
+                        1
+                    );
+                } else if (n_coins == 3) {
+                    StableSwap(instructions[i].pool).add_liquidity(
+                        [list[0], list[1], list[2]],
+                        1
+                    );
+                } else if (n_coins == 4) {
+                    StableSwap(instructions[i].pool).add_liquidity(
+                        [list[0], list[1], list[2], list[3]],
+                        1
+                    );
+                }
+
+                token = registry.get_lp_token(instructions[i].pool);
+                amount = IERC20(token).balanceOf(address(this));
+            } else {
+                StableSwap(instructions[i].pool).remove_liquidity_one_coin(
+                    amount,
+                    int128(instructions[i].n),
+                    1
+                );
+                token = registry.get_coins(instructions[i].pool)[
+                    instructions[i].n
+                ];
+                amount = IERC20(token).balanceOf(address(this));
+            }
+        }
+
+        require(target == token, "!path");
+    
+        approve(target, to_vault, amount);
+
+        uint256 out = Vault(to_vault).deposit(amount, msg.sender);
+        require(out >= min_amount_out);
+    }
+
+    function approve(address target, address to_vault, uint256 amount) internal {
+        if (IERC20(target).allowance(address(this), to_vault) < amount) {
+            SafeERC20.safeApprove(IERC20(target), to_vault, 0);
+            SafeERC20.safeApprove(IERC20(target), to_vault, type(uint256).max);
+        }
     }
 }
