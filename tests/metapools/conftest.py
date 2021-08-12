@@ -1,5 +1,6 @@
 import pytest
 import itertools
+import requests
 
 from brownie import Contract
 
@@ -26,25 +27,6 @@ CRV_META_BTC_VAULT = [
 ALL_PAIRS = list(itertools.combinations(CRV_META_BTC_VAULT, 2)) + list(
     itertools.combinations(CRV_META_3USD_VAULT, 2)
 )
-
-
-WHALES = {
-    "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417": "0x6965292e29514e527df092659fb4638dc39e7248",
-    "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757": "0x3841ef91d7e7af21cd2b6017a43f906a99b52bde",
-    "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6": "0x53b1aeaa018da00b4f458cc13d40eb3e8d1b85d6",
-    "0x30FCf7c6cDfC46eC237783D94Fc78553E79d4E9C": "0x28a55c4b4f9615fde3cdaddf6cc01fcf2e38a6b0",
-    "0xf8768814b88281DE4F532a3beEfA5b85B69b9324": "0x310d4fb2845c3e0c3c57165198d65a5327a373ea",
-    "0x054AF22E1519b020516D72D749221c24756385C9": "0xfeb4acf3df3cdea7399794d0869ef76a6efaff52",
-    "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa": "0x99fd1378ca799ed6772fe7bcdc9b30b389518962",
-    "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca": "0x3b29c6e356f9445b693abb5df42fbc932062e0fb",
-    "0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44": "0x10bf1dcb5ab7860bab1c3320163c6dddf8dcc0e4",
-    "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8": "0x52ad87832400485de7e7dc965d8ad890f4e82699",
-    "0x8fA3A9ecd9EFb07A8CE90A6eb014CF3c0E3B32Ef": "0x4b254ebbbb8fdb9d3e848501784692b2726b310c",
-    "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB": "0x64b2a32f030d9210e51ed8884c0d58b89137ca81",
-    "0x3c5DF3077BcF800640B5DAE8c91106575a4826E6": "0x99fd1378ca799ed6772fe7bcdc9b30b389518962",
-    "0x23D3D0f1c697247d5e0a9efB37d8b0ED0C464f7f": "0xe08a556f44bebac641898aa7f096b1f801d6cb7c",
-}
-
 
 @pytest.fixture
 def gov(accounts):
@@ -73,7 +55,9 @@ def vault_to(vaults):
 
 @pytest.fixture
 def whale(vault_from):
-    yield WHALES[vault_from.address]
+    url = "https://api.ethplorer.io/getTopTokenHolders/" + vault_from.address + "?apiKey=freekey"
+    resp = requests.get(url, allow_redirects=True)
+    yield resp.json()["holders"][0]["address"]
 
 
 @pytest.fixture
