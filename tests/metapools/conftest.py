@@ -67,9 +67,7 @@ def whale(vault_from):
 
 @pytest.fixture
 def amount(vault_from):
-    if (
-        vault_from.address in CRV_META_3USD_VAULT
-    ):
+    if vault_from.address in CRV_META_3USD_VAULT:
         yield 1000 * 10 ** vault_from.decimals()  # 1000 USD
     else:
         yield 0.1 * 10 ** vault_from.decimals()  # 0.1 BTC
