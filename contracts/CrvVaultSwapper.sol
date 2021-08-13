@@ -55,6 +55,16 @@ interface StableSwap {
         external
         view
         returns (uint256);
+
+    function calc_token_amount(uint256[3] calldata amounts, bool is_deposit)
+        external
+        view
+        returns (uint256);
+
+    function calc_token_amount(uint256[4] calldata amounts, bool is_deposit)
+        external
+        view
+        returns (uint256);
 }
 
 interface Registry {
@@ -173,7 +183,6 @@ contract CrvVaultSwapper {
 
         amount = Vault(from_vault).withdraw(amount, address(this));
         for (uint256 i = 0; i < instructions.length; i++) {
-
             if (instructions[i].deposit) {
                 uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
                 uint256[] memory list = new uint256[](n_coins);
@@ -213,14 +222,64 @@ contract CrvVaultSwapper {
         }
 
         require(target == token, "!path");
-    
+
         approve(target, to_vault, amount);
 
         uint256 out = Vault(to_vault).deposit(amount, msg.sender);
         require(out >= min_amount_out);
     }
 
-    function approve(address target, address to_vault, uint256 amount) internal {
+    function estimate_out(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        Swap[] calldata instructions
+    ) public view returns (uint256) {
+        // address token = Vault(from_vault).token();
+        // address target = Vault(to_vault).token();
+
+        uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
+        uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
+        amount =
+            (amount * pricePerShareFrom) /
+            (10**Vault(from_vault).decimals());
+        for (uint256 i = 0; i < instructions.length; i++) {
+            uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+            if (instructions[i].deposit) {
+                uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                uint256[] memory list = new uint256[](n_coins);
+                list[instructions[i].n] = amount;
+
+                if (n_coins == 2) {
+                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                            [list[0], list[1]],
+                            true
+                        );
+                } else if (n_coins == 3) {
+                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                            [list[0], list[1], list[2]],
+                            true
+                        );
+                } else if (n_coins == 4) {
+                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                            [list[0], list[1], list[2], list[3]],
+                            true
+                        );
+                }
+            } else {
+                amount = StableSwap(instructions[i].pool)
+                    .calc_withdraw_one_coin(amount, int128(instructions[i].n));
+            }
+        }
+        return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
+    }
+
+    function approve(
+        address target,
+        address to_vault,
+        uint256 amount
+    ) internal {
         if (IERC20(target).allowance(address(this), to_vault) < amount) {
             SafeERC20.safeApprove(IERC20(target), to_vault, 0);
             SafeERC20.safeApprove(IERC20(target), to_vault, type(uint256).max);

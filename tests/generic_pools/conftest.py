@@ -4,14 +4,44 @@ import requests
 
 from brownie import Contract
 
-ALL_PAIRS =[
-    ["0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417", "0x84E13785B5a27879921D6F685f041421C7F482dA", [(False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1)]], # META to 3CRV
-    ["0x84E13785B5a27879921D6F685f041421C7F482dA", "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",  [(True, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1)]], # 3CRV to META
-    ["0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9", "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417", [(True, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1), (True, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1)]] # USDC vault to cuve vault
-    ["0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417", "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9", [(False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1), (False, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1)]] # USDC vault to cuve vault
-
-    # metapool to tri pool
+ALL_PAIRS = [
+    [
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
+        "0x84E13785B5a27879921D6F685f041421C7F482dA",
+        [(False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1)],
+    ],  # META to 3CRV
+    [
+        "0x84E13785B5a27879921D6F685f041421C7F482dA",
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
+        [(True, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1)],
+    ],  # 3CRV to META
+    [
+        "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
+        [
+            (True, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1),
+            (True, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1),
+        ],
+    ],  # USDC vault to cuve vault
+    [
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
+        "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+        [
+            (False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1),
+            (False, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1),
+        ],
+    ],  # cuve vault to USDC vault
+    [
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
+        "0x3D980E50508CFd41a13837A60149927a11c03731",
+        [
+            (False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1),
+            (False, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 2),
+            (True, "0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5", 0),
+        ],
+    ],  # USDP crv to tricrv
 ]
+
 
 @pytest.fixture
 def gov(accounts):
@@ -37,13 +67,19 @@ def vault_from(vaults):
 def vault_to(vaults):
     yield Contract(vaults[1])
 
+
 @pytest.fixture()
 def instructions(vaults):
     yield vaults[2]
 
+
 @pytest.fixture
 def whale(vault_from):
-    url = "https://api.ethplorer.io/getTopTokenHolders/" + vault_from.address + "?apiKey=freekey"
+    url = (
+        "https://api.ethplorer.io/getTopTokenHolders/"
+        + vault_from.address
+        + "?apiKey=freekey"
+    )
     resp = requests.get(url, allow_redirects=True)
     yield resp.json()["holders"][0]["address"]
 

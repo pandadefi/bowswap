@@ -13,9 +13,13 @@ def test_metapool_swap(user, vault_from, vault_to, whale, vault_swapper, amount)
     estimate = vault_swapper.metapool_estimate_out(vault_from, vault_to, amount)
     # Makes sure it revert if amout out is too small
     with brownie.reverts():
-        vault_swapper.metapool_swap(vault_from, vault_to, amount, amount * 1.1, {"from": user})
+        vault_swapper.metapool_swap(
+            vault_from, vault_to, amount, amount * 1.1, {"from": user}
+        )
 
     # Do the swap
-    vault_swapper.metapool_swap(vault_from, vault_to, amount, estimate * 0.999, {"from": user})
+    vault_swapper.metapool_swap(
+        vault_from, vault_to, amount, estimate * 0.999, {"from": user}
+    )
     assert vault_to.balanceOf(user) > estimate * 0.999
     print(vault_to.balanceOf(user))

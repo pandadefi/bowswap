@@ -1,20 +1,37 @@
 from brownie import CrvVaultSwapper, accounts, network, web3, Contract
 from eth_utils import is_checksum_address
-
+import requests
+import time
 import click
 
 TRANSFERS = [
     (
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0x6965292e29514e527df092659fb4638dc39e7248",
         1000 * 10 ** 18,
     ),
     (
         "0xe9dc63083c464d6edccff23444ff3cfc6886f6fb",
-        "0x99fd1378ca799ed6772fe7bcdc9b30b389518962",
+        0.2 * 10 ** 18,
+    ),
+    (
+        "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+        1000 * 10 ** 6,
+    ),
+    (
+        "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+        0.2 * 10 ** 8,
+    ),
+    (
+        "0x84E13785B5a27879921D6F685f041421C7F482dA",
         0.2 * 10 ** 18,
     ),
 ]
+
+
+def get_whale(vault: str) -> str:
+    url = "https://api.ethplorer.io/getTopTokenHolders/" + vault + "?apiKey=freekey"
+    resp = requests.get(url, allow_redirects=True)
+    return resp.json()["holders"][0]["address"]
 
 
 def get_address(msg: str, default: str = None) -> str:
@@ -44,6 +61,7 @@ def main():
 
     to = get_address("send seed funds to")
     dev.transfer(to, 1 * 10 ** 18)
-    for (vault, whale, amount) in TRANSFERS:
+    for (vault, amount) in TRANSFERS:
         token = Contract(vault)
-        token.transfer(to, amount, {"from": whale})
+        token.transfer(to, amount, {"from": get_whale(vault)})
+        time.sleep(0.5)  # API rate limit

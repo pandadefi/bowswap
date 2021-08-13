@@ -28,6 +28,7 @@ ALL_PAIRS = list(itertools.combinations(CRV_META_BTC_VAULT, 2)) + list(
     itertools.combinations(CRV_META_3USD_VAULT, 2)
 )
 
+
 @pytest.fixture
 def gov(accounts):
     yield accounts[0]
@@ -55,7 +56,11 @@ def vault_to(vaults):
 
 @pytest.fixture
 def whale(vault_from):
-    url = "https://api.ethplorer.io/getTopTokenHolders/" + vault_from.address + "?apiKey=freekey"
+    url = (
+        "https://api.ethplorer.io/getTopTokenHolders/"
+        + vault_from.address
+        + "?apiKey=freekey"
+    )
     resp = requests.get(url, allow_redirects=True)
     yield resp.json()["holders"][0]["address"]
 
