@@ -87,7 +87,7 @@ def whale(vault_from):
 @pytest.fixture
 def amount(vault_from):
     if (
-        vault_from.address == "0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44"
+        vault_from.address in ["0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44", "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca"]
         or "USD" in vault_from.name()
     ):
         yield 1000 * 10 ** vault_from.decimals()  # 1000 USD
