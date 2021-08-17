@@ -182,9 +182,10 @@ contract CrvVaultSwapper {
         Vault(from_vault).transferFrom(msg.sender, address(this), amount);
 
         amount = Vault(from_vault).withdraw(amount, address(this));
+        uint256 n_coins;
         for (uint256 i = 0; i < instructions.length; i++) {
             if (instructions[i].deposit) {
-                uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                n_coins = registry.get_n_coins(instructions[i].pool)[0];
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
                 approve(token, instructions[i].pool, amount);
@@ -209,15 +210,15 @@ contract CrvVaultSwapper {
                 token = registry.get_lp_token(instructions[i].pool);
                 amount = IERC20(token).balanceOf(address(this));
             } else {
-                StableSwap(instructions[i].pool).remove_liquidity_one_coin(
-                    amount,
-                    int128(instructions[i].n),
-                    1
-                );
                 token = registry.get_coins(instructions[i].pool)[
                     instructions[i].n
                 ];
-                amount = IERC20(token).balanceOf(address(this));
+                amount = remove_liquidity_one_coin(
+                    token,
+                    instructions[i].pool,
+                    amount,
+                    instructions[i].n
+                );
             }
         }
 
@@ -229,16 +230,45 @@ contract CrvVaultSwapper {
         require(out >= min_amount_out);
     }
 
+    function remove_liquidity_one_coin(
+        address token,
+        address pool,
+        uint256 amount,
+        uint128 n
+    ) internal returns (uint256) {
+        uint256 amountBefore = IERC20(token).balanceOf(address(this));
+        pool.call(
+            abi.encodeWithSignature(
+                "remove_liquidity_one_coin(uint256,int128,uint256)",
+                amount,
+                int128(n),
+                1
+            )
+        );
+
+        uint256 newAmount = IERC20(token).balanceOf(address(this));
+
+        if (newAmount > amountBefore) {
+            return newAmount;
+        }
+
+        pool.call(
+            abi.encodeWithSignature(
+                "remove_liquidity_one_coin(uint256,uint256,uint256)",
+                amount,
+                uint256(n),
+                1
+            )
+        );
+        return IERC20(token).balanceOf(address(this));
+    }
+
     function estimate_out(
         address from_vault,
         address to_vault,
         uint256 amount,
-        uint256 min_amount_out,
         Swap[] calldata instructions
     ) public view returns (uint256) {
-        // address token = Vault(from_vault).token();
-        // address target = Vault(to_vault).token();
-
         uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
         uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
         amount =
@@ -247,7 +277,7 @@ contract CrvVaultSwapper {
         for (uint256 i = 0; i < instructions.length; i++) {
             uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
             if (instructions[i].deposit) {
-                uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                n_coins = registry.get_n_coins(instructions[i].pool)[0];
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
 
@@ -268,8 +298,11 @@ contract CrvVaultSwapper {
                         );
                 }
             } else {
-                amount = StableSwap(instructions[i].pool)
-                    .calc_withdraw_one_coin(amount, int128(instructions[i].n));
+                amount = calc_withdraw_one_coin(
+                    instructions[i].pool,
+                    amount,
+                    instructions[i].n
+                );
             }
         }
         return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
@@ -284,5 +317,33 @@ contract CrvVaultSwapper {
             SafeERC20.safeApprove(IERC20(target), to_vault, 0);
             SafeERC20.safeApprove(IERC20(target), to_vault, type(uint256).max);
         }
+    }
+
+    function calc_withdraw_one_coin(
+        address pool,
+        uint256 amount,
+        uint128 n
+    ) internal view returns (uint256) {
+        (bool success, bytes memory returnData) = pool.staticcall(
+            abi.encodeWithSignature(
+                "calc_withdraw_one_coin(uint256,uint256)",
+                amount,
+                uint256(n)
+            )
+        );
+        if (success) {
+            return abi.decode(returnData, (uint256));
+        }
+        (success, returnData) = pool.staticcall(
+            abi.encodeWithSignature(
+                "calc_withdraw_one_coin(uint256,int128)",
+                amount,
+                int128(n)
+            )
+        );
+
+        require(success, "!success");
+
+        return abi.decode(returnData, (uint256));
     }
 }
