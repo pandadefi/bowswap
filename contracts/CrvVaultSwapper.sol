@@ -78,7 +78,8 @@ interface Registry {
 }
 
 contract CrvVaultSwapper {
-    Registry registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
+    Registry constant registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
+    uint256 constant MIN_AMOUNT_OUT = 1;
 
     struct Swap {
         bool deposit;
@@ -124,13 +125,13 @@ contract CrvVaultSwapper {
 
         underlying_coin.approve(target_pool, liquidity_amount);
 
-        StableSwap(target_pool).add_liquidity([0, liquidity_amount], 1);
+        StableSwap(target_pool).add_liquidity([0, liquidity_amount], MIN_AMOUNT_OUT);
 
         uint256 target_amount = IERC20(target).balanceOf(address(this));
         approve(target, to_vault, target_amount);
 
         uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
-        require(out >= min_amount_out);
+        require(out >= min_amount_out, "out too low");
     }
 
     /**
@@ -227,7 +228,7 @@ contract CrvVaultSwapper {
         approve(target, to_vault, amount);
 
         uint256 out = Vault(to_vault).deposit(amount, msg.sender);
-        require(out >= min_amount_out);
+        require(out >= min_amount_out, "out too low");
     }
 
     function remove_liquidity_one_coin(

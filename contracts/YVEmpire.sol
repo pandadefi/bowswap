@@ -46,8 +46,8 @@ interface Vault {
 }
 
 contract YVEmpire {
-    Registry registry = Registry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
-    LendingPool lendingPool =
+    Registry constant registry = Registry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
+    LendingPool constant lendingPool =
         LendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
 
     enum Service {
@@ -78,6 +78,7 @@ contract YVEmpire {
             token.balanceOf(msg.sender),
             token.allowance(msg.sender, address(this))
         );
+        require(amount > 0, "!amount");
         SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount);
         return amount;
     }

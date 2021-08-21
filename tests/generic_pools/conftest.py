@@ -40,18 +40,17 @@ ALL_PAIRS = [
             (True, "0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5", 0),
         ],
     ],  # USDP crv to tricrv
-
     [
         "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
         "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
         [
-            [ False, '0x43b4FdFD4Ff969587185cDB6f0BD875c5Fc83f8c', 1 ],
-            [ False, '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', 2 ],
-            [ True, '0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5', 0 ],
-            [ False, '0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5', 1 ],
-            [ True, '0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714', 1 ]
-        ]
-    ] # alUSD crv to sBTC
+            [False, "0x43b4FdFD4Ff969587185cDB6f0BD875c5Fc83f8c", 1],
+            [False, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 2],
+            [True, "0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5", 0],
+            [False, "0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5", 1],
+            [True, "0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714", 1],
+        ],
+    ],  # alUSD crv to sBTC
 ]
 
 
@@ -99,7 +98,11 @@ def whale(vault_from):
 @pytest.fixture
 def amount(vault_from):
     if (
-        vault_from.address in ["0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44", "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca"]
+        vault_from.address
+        in [
+            "0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+            "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
+        ]
         or "USD" in vault_from.name()
     ):
         yield 1000 * 10 ** vault_from.decimals()  # 1000 USD
