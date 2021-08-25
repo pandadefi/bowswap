@@ -1,4 +1,4 @@
-from brownie import CrvVaultSwapper, accounts, network
+from brownie import VaultSwapper, YVEmpire, accounts, network
 import click
 
 
@@ -7,4 +7,5 @@ def main():
     dev = accounts.load(click.prompt("Account", type=click.Choice(accounts.load())))
     click.echo(f"You are using: 'dev' [{dev.address}]")
 
-    dev.deploy(CrvVaultSwapper)
+    dev.deploy(VaultSwapper)
+    dev.deploy(YVEmpire)

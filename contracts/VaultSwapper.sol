@@ -77,7 +77,7 @@ interface Registry {
     function get_coins(address) external view returns (address[8] memory);
 }
 
-contract CrvVaultSwapper {
+contract VaultSwapper {
     Registry constant registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant MIN_AMOUNT_OUT = 1;
 
