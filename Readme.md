@@ -3,6 +3,10 @@
 Swap between crv-metapool vaults.
 [bowswap.finance](https://bowswap.finance)
 
+## deployments
+
+- VaultSwapper [0x7c022d19518356d71ba046be28d721e1b425b4a9](https://etherscan.io/address/0x7c022d19518356d71ba046be28d721e1b425b4a9)
+- YVEmpire [0xeb8d98f9e42a15b0eb35315f737bdfda1a8d2eaa](https://etherscan.io/address/0xeb8d98f9e42a15b0eb35315f737bdfda1a8d2eaa)
 ## Getting started
 
 ### Requirements
