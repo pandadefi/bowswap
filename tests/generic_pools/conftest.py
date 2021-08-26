@@ -51,6 +51,11 @@ ALL_PAIRS = [
             [True, "0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714", 1],
         ],
     ],  # alUSD crv to sBTC
+    [
+        "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+        "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+        [[False, "0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0", 0]],
+    ],  # crvLink to link
 ]
 
 
