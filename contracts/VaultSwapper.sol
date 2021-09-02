@@ -28,6 +28,14 @@ interface Vault is IERC20 {
     function pricePerShare() external view returns (uint256);
 
     function totalAssets() external view returns (uint256);
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 amount,
+        uint256 expiry,
+        bytes calldata signature
+    ) external returns (bool);
 }
 
 interface StableSwap {
@@ -85,6 +93,28 @@ contract VaultSwapper {
         bool deposit;
         address pool;
         uint128 n;
+    }
+
+    /*
+        @notice Swap with apoval using eip-2612
+        @param from_vault The vault tokens should be taken from
+        @param to_vault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the from_vault
+        @param min_amount_out The minimal amount of tokens you would expect from the to_vault
+        @param expiry signature expiry
+        @param signature signature
+    */
+
+    function metapool_swap_with_signature(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        uint256 expiry,
+        bytes calldata signature 
+    ) public {
+        assert(Vault(from_vault).permit(msg.sender, address(this), amount, expiry, signature));
+        metapool_swap(from_vault, to_vault, amount, min_amount_out);
     }
 
     /**
@@ -168,6 +198,19 @@ contract VaultSwapper {
 
         return
             (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
+    }
+
+    function swap_with_signature(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        Swap[] calldata instructions,
+        uint256 expiry,
+        bytes calldata signature 
+    ) public {
+        assert(Vault(from_vault).permit(msg.sender, address(this), amount, expiry, signature));
+        swap(from_vault, to_vault, amount, min_amount_out, instructions);
     }
 
     function swap(
