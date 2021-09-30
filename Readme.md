@@ -5,7 +5,7 @@ Swap between crv-metapool vaults.
 
 ## deployments
 
-- VaultSwapper [0x7c022d19518356d71ba046be28d721e1b425b4a9](https://etherscan.io/address/0x7c022d19518356d71ba046be28d721e1b425b4a9)
+- VaultSwapper [0xf12eeab1c759dd7d8c012cca6d8715eed80e51b6](https://etherscan.io/address/0xf12eeab1c759dd7d8c012cca6d8715eed80e51b6)
 - YVEmpire [0xeb8d98f9e42a15b0eb35315f737bdfda1a8d2eaa](https://etherscan.io/address/0xeb8d98f9e42a15b0eb35315f737bdfda1a8d2eaa)
 ## Getting started
 
