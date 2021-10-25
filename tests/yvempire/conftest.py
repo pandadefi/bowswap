@@ -31,7 +31,7 @@ def cusdc():
 
 @pytest.fixture()
 def cusdc_whale():
-    yield "0xe6c78b85f93c25b8ee7d963fd15d1d53a00f5908"
+    yield "0xb3bd459e0598dde1fe84b1d0a1430be175b5d5be"
 
 
 @pytest.fixture
