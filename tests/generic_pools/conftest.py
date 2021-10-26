@@ -33,11 +33,11 @@ ALL_PAIRS = [
     ],  # cuve vault to USDC vault
     [
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0x3D980E50508CFd41a13837A60149927a11c03731",
+        "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
         [
             (False, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1),
             (False, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 2),
-            (True, "0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5", 0),
+            (True, "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46", 0),
         ],
     ],  # USDP crv to tricrv
     [

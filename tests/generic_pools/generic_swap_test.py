@@ -9,7 +9,7 @@ def transfer(token, amount, whale, to):
 
 
 def test_generic_swap(
-    user, vault_from, vault_to, whale, vault_swapper, amount, instructions
+    user, vault_from, vault_to, whale, vault_swapper, amount, instructions, gov
 ):
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
@@ -17,6 +17,35 @@ def test_generic_swap(
     vault_swapper.swap(vault_from, vault_to, amount, 1, instructions, {"from": user})
 
     assert vault_to.balanceOf(user) > estimate * 0.999
+    assert pytest.approx(
+        vault_to.balanceOf(user) * (100 / 99.7) * 0.003, rel=10e-6
+    ) == vault_to.balanceOf(gov)
+
+
+def test_generic_swap_no_donation(
+    user, vault_from, vault_to, whale, vault_swapper, amount, instructions, gov
+):
+    transfer(vault_from, amount, whale, user)
+    vault_from.approve(vault_swapper, amount, {"from": user})
+    estimate = vault_swapper.estimate_out(vault_from, vault_to, amount, instructions)
+    vault_swapper.swap(vault_from, vault_to, amount, 1, instructions, 0, {"from": user})
+
+    assert vault_to.balanceOf(user) > estimate * 0.999
+    assert vault_to.balanceOf(gov) == 0
+
+
+def test_generic_swap_large_donation(
+    user, vault_from, vault_to, whale, vault_swapper, amount, instructions, gov
+):
+    transfer(vault_from, amount, whale, user)
+    vault_from.approve(vault_swapper, amount, {"from": user})
+    estimate = vault_swapper.estimate_out(vault_from, vault_to, amount, instructions)
+    vault_swapper.swap(
+        vault_from, vault_to, amount, 1, instructions, 5000, {"from": user}
+    )
+
+    assert vault_to.balanceOf(user) > estimate * 0.499
+    assert vault_to.balanceOf(gov) > estimate * 0.499
 
 
 def test_generic_swap_permit(

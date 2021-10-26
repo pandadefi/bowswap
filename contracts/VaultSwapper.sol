@@ -86,13 +86,26 @@ interface Registry {
 }
 
 contract VaultSwapper {
-    Registry constant registry = Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
+    Registry constant registry =
+        Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant MIN_AMOUNT_OUT = 1;
-
+    uint256 constant MAX_DONATION = 10_000;
+    uint256 constant DEFAULT_DONATION = 50;
+    address owner;
     struct Swap {
         bool deposit;
         address pool;
         uint128 n;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function set_owner(address new_owner) public {
+        require(owner == msg.sender);
+        require(new_owner != address(0));
+        owner = new_owner;
     }
 
     /*
@@ -104,6 +117,24 @@ contract VaultSwapper {
         @param expiry signature expiry
         @param signature signature
     */
+    function metapool_swap_with_signature(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        uint256 expiry,
+        bytes calldata signature
+    ) public {
+        metapool_swap_with_signature(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            expiry,
+            signature,
+            DEFAULT_DONATION
+        );
+    }
 
     function metapool_swap_with_signature(
         address from_vault,
@@ -111,10 +142,19 @@ contract VaultSwapper {
         uint256 amount,
         uint256 min_amount_out,
         uint256 expiry,
-        bytes calldata signature 
+        bytes calldata signature,
+        uint256 donation
     ) public {
-        assert(Vault(from_vault).permit(msg.sender, address(this), amount, expiry, signature));
-        metapool_swap(from_vault, to_vault, amount, min_amount_out);
+        assert(
+            Vault(from_vault).permit(
+                msg.sender,
+                address(this),
+                amount,
+                expiry,
+                signature
+            )
+        );
+        metapool_swap(from_vault, to_vault, amount, min_amount_out, donation);
     }
 
     /**
@@ -132,6 +172,16 @@ contract VaultSwapper {
         address to_vault,
         uint256 amount,
         uint256 min_amount_out
+    ) public {
+        metapool_swap(from_vault, to_vault, amount, min_amount_out, DEFAULT_DONATION);
+    }
+
+    function metapool_swap(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        uint256 donation
     ) public {
         address underlying = Vault(from_vault).token();
         address target = Vault(to_vault).token();
@@ -155,12 +205,23 @@ contract VaultSwapper {
 
         underlying_coin.approve(target_pool, liquidity_amount);
 
-        StableSwap(target_pool).add_liquidity([0, liquidity_amount], MIN_AMOUNT_OUT);
+        StableSwap(target_pool).add_liquidity(
+            [0, liquidity_amount],
+            MIN_AMOUNT_OUT
+        );
 
         uint256 target_amount = IERC20(target).balanceOf(address(this));
         approve(target, to_vault, target_amount);
+        uint256 out = 0;
+        if (donation == 0) {
+            out = Vault(to_vault).deposit(target_amount, msg.sender);
+        } else {
+            out = Vault(to_vault).deposit(target_amount, address(this));
+            uint256 donating = (out * donation) / MAX_DONATION;
+            Vault(to_vault).transfer(msg.sender, out - donating);
+            Vault(to_vault).transfer(owner, donating);
+        }
 
-        uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
         require(out >= min_amount_out, "out too low");
     }
 
@@ -207,10 +268,47 @@ contract VaultSwapper {
         uint256 min_amount_out,
         Swap[] calldata instructions,
         uint256 expiry,
-        bytes calldata signature 
+        bytes calldata signature
     ) public {
-        assert(Vault(from_vault).permit(msg.sender, address(this), amount, expiry, signature));
-        swap(from_vault, to_vault, amount, min_amount_out, instructions);
+        swap_with_signature(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            instructions,
+            expiry,
+            signature,
+            DEFAULT_DONATION
+        );
+    }
+
+    function swap_with_signature(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        Swap[] calldata instructions,
+        uint256 expiry,
+        bytes calldata signature,
+        uint256 donation
+    ) public {
+        assert(
+            Vault(from_vault).permit(
+                msg.sender,
+                address(this),
+                amount,
+                expiry,
+                signature
+            )
+        );
+        swap(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            instructions,
+            donation
+        );
     }
 
     function swap(
@@ -219,6 +317,17 @@ contract VaultSwapper {
         uint256 amount,
         uint256 min_amount_out,
         Swap[] calldata instructions
+    ) public {
+        swap(from_vault, to_vault, amount, min_amount_out, instructions, DEFAULT_DONATION);
+    }
+
+    function swap(
+        address from_vault,
+        address to_vault,
+        uint256 amount,
+        uint256 min_amount_out,
+        Swap[] calldata instructions,
+        uint256 donation
     ) public {
         address token = Vault(from_vault).token();
         address target = Vault(to_vault).token();
@@ -269,8 +378,16 @@ contract VaultSwapper {
         require(target == token, "!path");
 
         approve(target, to_vault, amount);
+        uint256 out = 0;
+        if (donation == 0) {
+            out = Vault(to_vault).deposit(amount, msg.sender);
+        } else {
+            out = Vault(to_vault).deposit(amount, address(this));
+            uint256 donating = (out * donation) / MAX_DONATION;
+            Vault(to_vault).transfer(msg.sender, out - donating);
+            Vault(to_vault).transfer(owner, donating);
+        }
 
-        uint256 out = Vault(to_vault).deposit(amount, msg.sender);
         require(out >= min_amount_out, "out too low");
     }
 

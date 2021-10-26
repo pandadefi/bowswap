@@ -46,7 +46,8 @@ interface Vault {
 }
 
 contract YVEmpire {
-    Registry constant registry = Registry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
+    Registry constant registry =
+        Registry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
     LendingPool constant lendingPool =
         LendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
 
