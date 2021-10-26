@@ -25,7 +25,7 @@ def test_metapool_swap(user, vault_from, vault_to, whale, vault_swapper, amount,
     )
     assert vault_to.balanceOf(user) > estimate * 0.99
     assert pytest.approx(
-        vault_to.balanceOf(user) * (100 / 99.95) * 0.0005, rel=10e-6
+        vault_to.balanceOf(user) * (100 / 99.5) * 0.005, rel=10e-6
     ) == vault_to.balanceOf(gov)
 
 

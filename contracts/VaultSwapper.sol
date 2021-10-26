@@ -89,7 +89,8 @@ contract VaultSwapper {
     Registry constant registry =
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant MIN_AMOUNT_OUT = 1;
-    uint256 MAX_DONATION = 10_000;
+    uint256 constant MAX_DONATION = 10_000;
+    uint256 constant DEFAULT_DONATION = 50;
     address owner;
     struct Swap {
         bool deposit;
@@ -131,7 +132,7 @@ contract VaultSwapper {
             min_amount_out,
             expiry,
             signature,
-            5
+            DEFAULT_DONATION
         );
     }
 
@@ -172,7 +173,7 @@ contract VaultSwapper {
         uint256 amount,
         uint256 min_amount_out
     ) public {
-        metapool_swap(from_vault, to_vault, amount, min_amount_out, 5);
+        metapool_swap(from_vault, to_vault, amount, min_amount_out, DEFAULT_DONATION);
     }
 
     function metapool_swap(
@@ -277,7 +278,7 @@ contract VaultSwapper {
             instructions,
             expiry,
             signature,
-            5
+            DEFAULT_DONATION
         );
     }
 
@@ -317,7 +318,7 @@ contract VaultSwapper {
         uint256 min_amount_out,
         Swap[] calldata instructions
     ) public {
-        swap(from_vault, to_vault, amount, min_amount_out, instructions, 5);
+        swap(from_vault, to_vault, amount, min_amount_out, instructions, DEFAULT_DONATION);
     }
 
     function swap(

@@ -18,7 +18,7 @@ def test_generic_swap(
 
     assert vault_to.balanceOf(user) > estimate * 0.999
     assert pytest.approx(
-        vault_to.balanceOf(user) * (100 / 99.95) * 0.0005, rel=10e-6
+        vault_to.balanceOf(user) * (100 / 99.5) * 0.005, rel=10e-6
     ) == vault_to.balanceOf(gov)
 
 
