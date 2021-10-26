@@ -88,10 +88,10 @@ interface Registry {
 contract VaultSwapper {
     Registry constant registry =
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
-    uint256 constant MIN_AMOUNT_OUT = 1;
-    uint256 constant MAX_DONATION = 10_000;
-    uint256 constant DEFAULT_DONATION = 50;
-    address owner;
+    uint256 constant private MIN_AMOUNT_OUT = 1;
+    uint256 constant private MAX_DONATION = 10_000;
+    uint256 constant private DEFAULT_DONATION = 50;
+    address public owner;
     struct Swap {
         bool deposit;
         address pool;
@@ -211,16 +211,15 @@ contract VaultSwapper {
         );
 
         uint256 target_amount = IERC20(target).balanceOf(address(this));
-        approve(target, to_vault, target_amount);
-        uint256 out = 0;
-        if (donation == 0) {
-            out = Vault(to_vault).deposit(target_amount, msg.sender);
-        } else {
-            out = Vault(to_vault).deposit(target_amount, address(this));
-            uint256 donating = (out * donation) / MAX_DONATION;
-            Vault(to_vault).transfer(msg.sender, out - donating);
-            Vault(to_vault).transfer(owner, donating);
+        if(donation != 0) {
+            uint256 donating = (target_amount * donation) / MAX_DONATION;
+            SafeERC20.safeTransfer(IERC20(target), owner, donating);
+            target_amount -= donating;
         }
+
+        approve(target, to_vault, target_amount);
+
+        uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
     }
@@ -235,7 +234,8 @@ contract VaultSwapper {
     function metapool_estimate_out(
         address from_vault,
         address to_vault,
-        uint256 amount
+        uint256 amount,
+        uint256 donation
     ) public view returns (uint256) {
         address underlying = Vault(from_vault).token();
         address target = Vault(to_vault).token();
@@ -256,7 +256,7 @@ contract VaultSwapper {
             [0, amount_out],
             true
         );
-
+        amount_out -= (amount_out * (MAX_DONATION - donation) / MAX_DONATION);
         return
             (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
@@ -377,16 +377,13 @@ contract VaultSwapper {
 
         require(target == token, "!path");
 
-        approve(target, to_vault, amount);
-        uint256 out = 0;
-        if (donation == 0) {
-            out = Vault(to_vault).deposit(amount, msg.sender);
-        } else {
-            out = Vault(to_vault).deposit(amount, address(this));
-            uint256 donating = (out * donation) / MAX_DONATION;
-            Vault(to_vault).transfer(msg.sender, out - donating);
-            Vault(to_vault).transfer(owner, donating);
+        if(donation != 0) {
+            uint256 donating = (amount * donation) / MAX_DONATION;
+            SafeERC20.safeTransfer(IERC20(target), owner, donating);
+            amount -= donating;
         }
+        approve(target, to_vault, amount);
+        uint256 out  = Vault(to_vault).deposit(amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
     }
@@ -428,7 +425,8 @@ contract VaultSwapper {
         address from_vault,
         address to_vault,
         uint256 amount,
-        Swap[] calldata instructions
+        Swap[] calldata instructions,
+        uint256 donation
     ) public view returns (uint256) {
         uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
         uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
@@ -466,6 +464,7 @@ contract VaultSwapper {
                 );
             }
         }
+        amount -= (amount * (MAX_DONATION - donation) / MAX_DONATION);
         return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
 
