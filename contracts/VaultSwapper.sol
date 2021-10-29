@@ -3,6 +3,7 @@
 pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 interface Vault is IERC20 {
     function decimals() external view returns (uint256);
@@ -85,21 +86,24 @@ interface Registry {
     function get_coins(address) external view returns (address[8] memory);
 }
 
-contract VaultSwapper {
+contract VaultSwapper is Initializable{
     Registry constant registry =
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant private MIN_AMOUNT_OUT = 1;
     uint256 constant private MAX_DONATION = 10_000;
     uint256 constant private DEFAULT_DONATION = 50;
+    uint256 constant private UNKNOWN_ORIGIN = 0;
     address public owner;
+
+    event Orgin(uint256 origin);
     struct Swap {
         bool deposit;
         address pool;
         uint128 n;
     }
 
-    constructor() {
-        owner = msg.sender;
+    function initialize(address _owner) initializer public {
+        owner = _owner;
     }
 
     function set_owner(address new_owner) public {
@@ -132,7 +136,8 @@ contract VaultSwapper {
             min_amount_out,
             expiry,
             signature,
-            DEFAULT_DONATION
+            DEFAULT_DONATION,
+            UNKNOWN_ORIGIN
         );
     }
 
@@ -143,7 +148,8 @@ contract VaultSwapper {
         uint256 min_amount_out,
         uint256 expiry,
         bytes calldata signature,
-        uint256 donation
+        uint256 donation,
+        uint256 origin
     ) public {
         assert(
             Vault(from_vault).permit(
@@ -154,7 +160,7 @@ contract VaultSwapper {
                 signature
             )
         );
-        metapool_swap(from_vault, to_vault, amount, min_amount_out, donation);
+        metapool_swap(from_vault, to_vault, amount, min_amount_out, donation, origin);
     }
 
     /**
@@ -173,7 +179,7 @@ contract VaultSwapper {
         uint256 amount,
         uint256 min_amount_out
     ) public {
-        metapool_swap(from_vault, to_vault, amount, min_amount_out, DEFAULT_DONATION);
+        metapool_swap(from_vault, to_vault, amount, min_amount_out, DEFAULT_DONATION, UNKNOWN_ORIGIN);
     }
 
     function metapool_swap(
@@ -181,7 +187,8 @@ contract VaultSwapper {
         address to_vault,
         uint256 amount,
         uint256 min_amount_out,
-        uint256 donation
+        uint256 donation,
+        uint256 origin
     ) public {
         address underlying = Vault(from_vault).token();
         address target = Vault(to_vault).token();
@@ -222,6 +229,9 @@ contract VaultSwapper {
         uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
+        if (origin != UNKNOWN_ORIGIN) {
+            emit Orgin(origin);
+        }
     }
 
     /**
@@ -278,7 +288,8 @@ contract VaultSwapper {
             instructions,
             expiry,
             signature,
-            DEFAULT_DONATION
+            DEFAULT_DONATION,
+            UNKNOWN_ORIGIN
         );
     }
 
@@ -290,7 +301,8 @@ contract VaultSwapper {
         Swap[] calldata instructions,
         uint256 expiry,
         bytes calldata signature,
-        uint256 donation
+        uint256 donation,
+        uint256 origin
     ) public {
         assert(
             Vault(from_vault).permit(
@@ -307,7 +319,8 @@ contract VaultSwapper {
             amount,
             min_amount_out,
             instructions,
-            donation
+            donation,
+            origin
         );
     }
 
@@ -318,7 +331,7 @@ contract VaultSwapper {
         uint256 min_amount_out,
         Swap[] calldata instructions
     ) public {
-        swap(from_vault, to_vault, amount, min_amount_out, instructions, DEFAULT_DONATION);
+        swap(from_vault, to_vault, amount, min_amount_out, instructions, DEFAULT_DONATION, UNKNOWN_ORIGIN);
     }
 
     function swap(
@@ -327,7 +340,8 @@ contract VaultSwapper {
         uint256 amount,
         uint256 min_amount_out,
         Swap[] calldata instructions,
-        uint256 donation
+        uint256 donation,
+        uint256 origin
     ) public {
         address token = Vault(from_vault).token();
         address target = Vault(to_vault).token();
@@ -386,6 +400,9 @@ contract VaultSwapper {
         uint256 out  = Vault(to_vault).deposit(amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
+        if (origin != UNKNOWN_ORIGIN){
+            emit Orgin(origin);
+        }
     }
 
     function remove_liquidity_one_coin(

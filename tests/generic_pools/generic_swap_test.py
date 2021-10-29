@@ -27,7 +27,7 @@ def test_generic_swap_no_donation(
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
     estimate = vault_swapper.estimate_out(vault_from, vault_to, amount, instructions, 0)
-    vault_swapper.swap(vault_from, vault_to, amount, 1, instructions, 0, {"from": user})
+    vault_swapper.swap(vault_from, vault_to, amount, 1, instructions, 0, 0, {"from": user})
 
     assert vault_to.balanceOf(user) > estimate * 0.999
     vault_underlying_token = Contract(vault_to.token())
@@ -40,14 +40,15 @@ def test_generic_swap_large_donation(
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
     estimate = vault_swapper.estimate_out(vault_from, vault_to, amount, instructions, 5000)
-    vault_swapper.swap(
-        vault_from, vault_to, amount, 1, instructions, 5000, {"from": user}
+    tx = vault_swapper.swap(
+        vault_from, vault_to, amount, 1, instructions, 5000, 1, {"from": user}
     )
+    assert tx.events["Orgin"]["origin"] == 1
 
     assert vault_to.balanceOf(user) > estimate * 0.999
     vault_underlying_token = Contract(vault_to.token())
     assert vault_underlying_token.balanceOf(gov) != 0
-
+    
 
 def test_generic_swap_permit(
     vault_from, vault_to, whale, vault_swapper, amount, instructions, sign_vault_permit

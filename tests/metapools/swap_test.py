@@ -43,7 +43,7 @@ def test_metapool_swap_no_donation(
 
     # Do the swap
     vault_swapper.metapool_swap(
-        vault_from, vault_to, amount, estimate * 0.999, 0, {"from": user}
+        vault_from, vault_to, amount, estimate * 0.999, 0, 0, {"from": user}
     )
     assert vault_to.balanceOf(user) > estimate * 0.999
     vault_underlying_token = Contract(vault_to.token())
@@ -64,9 +64,11 @@ def test_metapool_swap_large_donation(
         )
 
     # Do the swap
-    vault_swapper.metapool_swap(
-        vault_from, vault_to, amount, estimate * 0.999, 5000, {"from": user}
+    tx = vault_swapper.metapool_swap(
+        vault_from, vault_to, amount, estimate * 0.999, 5000, 1, {"from": user}
     )
+    assert tx.events["Orgin"]["origin"] == 1
+
     assert vault_to.balanceOf(user) > estimate * 0.999
     vault_underlying_token = Contract(vault_to.token())
     assert vault_underlying_token.balanceOf(gov) != 0
