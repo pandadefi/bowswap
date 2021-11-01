@@ -91,7 +91,7 @@ contract VaultSwapper is Initializable{
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant private MIN_AMOUNT_OUT = 1;
     uint256 constant private MAX_DONATION = 10_000;
-    uint256 constant private DEFAULT_DONATION = 50;
+    uint256 constant private DEFAULT_DONATION = 30;
     uint256 constant private UNKNOWN_ORIGIN = 0;
     address public owner;
 
