@@ -82,7 +82,9 @@ def amount(vault_from):
 
 @pytest.fixture
 def vault_swapper(gov, VaultSwapper):
-    yield gov.deploy(VaultSwapper)
+    swapper = gov.deploy(VaultSwapper)
+    swapper.initialize(gov)
+    yield swapper
 
 
 @pytest.fixture(scope="function", autouse=True)
