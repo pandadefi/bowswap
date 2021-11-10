@@ -86,7 +86,7 @@ interface Registry {
     function get_coins(address) external view returns (address[8] memory);
 }
 
-contract VaultSwapper is Initializable{
+contract VaultSwapper is Initializable {
     Registry constant registry =
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     uint256 constant private MIN_AMOUNT_OUT = 1;
@@ -266,7 +266,7 @@ contract VaultSwapper is Initializable{
             [0, amount_out],
             true
         );
-        amount_out -= (amount_out * (MAX_DONATION - donation) / MAX_DONATION);
+        amount_out -= amount_out * donation / MAX_DONATION;
         return
             (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
@@ -481,7 +481,7 @@ contract VaultSwapper is Initializable{
                 );
             }
         }
-        amount -= (amount * (MAX_DONATION - donation) / MAX_DONATION);
+        amount -= amount * donation / MAX_DONATION;
         return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
 
