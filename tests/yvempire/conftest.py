@@ -69,7 +69,7 @@ def ausdt():
 
 @pytest.fixture()
 def ausdt_whale():
-    yield "0x9e6bf04486cd9039d3e3d57fb01633dff13a9a5c"
+    yield "0xe36e383382f0668f5f806ebca586a765a1ec9e19"
 
 
 @pytest.fixture
