@@ -86,9 +86,17 @@ interface Registry {
     function get_coins(address) external view returns (address[8] memory);
 }
 
+interface FactoryRegistry {
+    function get_coins(address) external view returns (address[4] memory);
+    function get_n_coins(address) external view returns (uint256);
+}
+
 contract VaultSwapper is Initializable {
     Registry constant registry =
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
+    FactoryRegistry constant factory_registry =
+        FactoryRegistry(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
+    
     uint256 constant private MIN_AMOUNT_OUT = 1;
     uint256 constant private MAX_DONATION = 10_000;
     uint256 constant private DEFAULT_DONATION = 30;
@@ -193,8 +201,8 @@ contract VaultSwapper is Initializable {
         address underlying = Vault(from_vault).token();
         address target = Vault(to_vault).token();
 
-        address underlying_pool = registry.get_pool_from_lp_token(underlying);
-        address target_pool = registry.get_pool_from_lp_token(target);
+        address underlying_pool = _get_pool_from_lp_token(underlying);
+        address target_pool = _get_pool_from_lp_token(target);
 
         Vault(from_vault).transferFrom(msg.sender, address(this), amount);
         uint256 underlying_amount = Vault(from_vault).withdraw(
@@ -207,7 +215,7 @@ contract VaultSwapper is Initializable {
             1
         );
 
-        IERC20 underlying_coin = IERC20(registry.get_coins(underlying_pool)[1]);
+        IERC20 underlying_coin = IERC20(_get_coin(underlying_pool, 1));
         uint256 liquidity_amount = underlying_coin.balanceOf(address(this));
 
         underlying_coin.approve(target_pool, liquidity_amount);
@@ -250,8 +258,8 @@ contract VaultSwapper is Initializable {
         address underlying = Vault(from_vault).token();
         address target = Vault(to_vault).token();
 
-        address underlying_pool = registry.get_pool_from_lp_token(underlying);
-        address target_pool = registry.get_pool_from_lp_token(target);
+        address underlying_pool = _get_pool_from_lp_token(underlying);
+        address target_pool = _get_pool_from_lp_token(target);
 
         uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
         uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
@@ -352,7 +360,7 @@ contract VaultSwapper is Initializable {
         uint256 n_coins;
         for (uint256 i = 0; i < instructions.length; i++) {
             if (instructions[i].deposit) {
-                n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                n_coins = _get_n_coins(instructions[i].pool);
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
                 approve(token, instructions[i].pool, amount);
@@ -377,9 +385,7 @@ contract VaultSwapper is Initializable {
                 token = registry.get_lp_token(instructions[i].pool);
                 amount = IERC20(token).balanceOf(address(this));
             } else {
-                token = registry.get_coins(instructions[i].pool)[
-                    instructions[i].n
-                ];
+                token = _get_coin(instructions[i].pool, instructions[i].n);
                 amount = remove_liquidity_one_coin(
                     token,
                     instructions[i].pool,
@@ -451,9 +457,9 @@ contract VaultSwapper is Initializable {
             (amount * pricePerShareFrom) /
             (10**Vault(from_vault).decimals());
         for (uint256 i = 0; i < instructions.length; i++) {
-            uint256 n_coins = registry.get_n_coins(instructions[i].pool)[0];
+            uint256 n_coins = _get_n_coins(instructions[i].pool);
             if (instructions[i].deposit) {
-                n_coins = registry.get_n_coins(instructions[i].pool)[0];
+                n_coins = _get_n_coins(instructions[i].pool);
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
 
@@ -522,5 +528,26 @@ contract VaultSwapper is Initializable {
         require(success, "!success");
 
         return abi.decode(returnData, (uint256));
+    }
+
+    function _get_coin(address pool, uint256 n) internal view returns(address) {
+        address token = registry.get_coins(pool)[n];
+        if (token != address(0x0)) return token;
+        return factory_registry.get_coins(pool)[n];
+    }
+
+    function _get_pool_from_lp_token(address lp) internal view returns(address) {
+        address pool = registry.get_pool_from_lp_token(lp);
+        if (pool == address(0x0)) {
+            return lp;
+        } else {
+            return pool;
+        }
+    }
+
+    function _get_n_coins(address pool) internal view returns(uint256) {
+        uint256 num = registry.get_n_coins(pool)[0];
+        if (num != 0) return num;
+        return factory_registry.get_n_coins(pool);
     }
 }

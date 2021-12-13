@@ -56,6 +56,14 @@ ALL_PAIRS = [
         "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
         [[False, "0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0", 0]],
     ],  # crvLink to link
+    [
+        "0x67e019bfbd5a67207755D04467D6A70c0B75bF60",
+        "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+        [
+            [False, "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859", 1],
+            [True, "0x0Ce6a5fF5217e38315f87032CF90686C96627CAA", 1],
+        ],
+    ],  # ibEUR to EURS
 ]
 
 
