@@ -120,10 +120,16 @@ contract VaultSwapper is Initializable {
     address public owner;
 
     event Orgin(uint256 origin);
+
+    enum Action {
+        Deposit, Withdraw, Swap
+    }
+
     struct Swap {
-        bool deposit;
+        Action action;
         address pool;
         uint128 n;
+        uint128 m;
     }
 
     function initialize(address _owner) public initializer {
@@ -393,11 +399,11 @@ contract VaultSwapper is Initializable {
         address target = Vault(to_vault).token();
 
         Vault(from_vault).transferFrom(msg.sender, address(this), amount);
-
         amount = Vault(from_vault).withdraw(amount, address(this));
+
         uint256 n_coins;
         for (uint256 i = 0; i < instructions.length; i++) {
-            if (instructions[i].deposit) {
+            if (instructions[i].action == Action.Deposit) {
                 n_coins = _get_n_coins(instructions[i].pool);
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
@@ -420,9 +426,9 @@ contract VaultSwapper is Initializable {
                     );
                 }
 
-                token = registry.get_lp_token(instructions[i].pool);
+                token = _get_lp_token_from_pool(instructions[i].pool);
                 amount = IERC20(token).balanceOf(address(this));
-            } else {
+            } else if (instructions[i].action == Action.Withdraw) {
                 token = _get_coin(instructions[i].pool, instructions[i].n);
                 amount = remove_liquidity_one_coin(
                     token,
@@ -430,6 +436,10 @@ contract VaultSwapper is Initializable {
                     amount,
                     instructions[i].n
                 );
+            } else {
+                approve(token, instructions[i].pool, amount);
+                token = _get_coin(instructions[i].pool, instructions[i].m);
+                amount = _exchange(token, instructions[i].pool, amount, instructions[i].n, instructions[i].m);
             }
         }
 
@@ -458,6 +468,19 @@ contract VaultSwapper is Initializable {
         uint256 amountBefore = IERC20(token).balanceOf(address(this));
         pool.call(
             abi.encodeWithSignature(
+                "remove_liquidity_one_coin(uint256,uint256,uint256)",
+                amount,
+                uint256(n),
+                1
+            )
+        );
+        uint256 newAmount = IERC20(token).balanceOf(address(this));
+
+        if (newAmount > amountBefore) {
+            return newAmount;
+        }
+        pool.call(
+            abi.encodeWithSignature(
                 "remove_liquidity_one_coin(uint256,int128,uint256)",
                 amount,
                 int128(n),
@@ -465,21 +488,10 @@ contract VaultSwapper is Initializable {
             )
         );
 
-        uint256 newAmount = IERC20(token).balanceOf(address(this));
+        newAmount = IERC20(token).balanceOf(address(this));
+        require(newAmount > amountBefore, "!remove");
 
-        if (newAmount > amountBefore) {
-            return newAmount;
-        }
-
-        pool.call(
-            abi.encodeWithSignature(
-                "remove_liquidity_one_coin(uint256,uint256,uint256)",
-                amount,
-                uint256(n),
-                1
-            )
-        );
-        return IERC20(token).balanceOf(address(this));
+        return newAmount;
     }
 
     function estimate_out(
@@ -496,7 +508,7 @@ contract VaultSwapper is Initializable {
             (10**Vault(from_vault).decimals());
         for (uint256 i = 0; i < instructions.length; i++) {
             uint256 n_coins = _get_n_coins(instructions[i].pool);
-            if (instructions[i].deposit) {
+            if (instructions[i].action == Action.Deposit) {
                 n_coins = _get_n_coins(instructions[i].pool);
                 uint256[] memory list = new uint256[](n_coins);
                 list[instructions[i].n] = amount;
@@ -540,12 +552,16 @@ contract VaultSwapper is Initializable {
                             );
                     }
                 }
-            } else {
-                amount = calc_withdraw_one_coin(
+            } else if (instructions[i].action == Action.Withdraw) {
+                amount = _calc_withdraw_one_coin(
                     instructions[i].pool,
                     amount,
                     instructions[i].n
                 );
+            } else {
+                amount = _calc_exchange(instructions[i].pool,
+                    amount,
+                    instructions[i].n, instructions[i].m);
             }
         }
         amount -= (amount * donation) / MAX_DONATION;
@@ -557,13 +573,16 @@ contract VaultSwapper is Initializable {
         address to_vault,
         uint256 amount
     ) internal {
-        if (IERC20(target).allowance(address(this), to_vault) < amount) {
-            SafeERC20.safeApprove(IERC20(target), to_vault, 0);
+        uint256 allowance = IERC20(target).allowance(address(this), to_vault);
+        if (allowance < amount) {
+            if (allowance != 0) {
+                SafeERC20.safeApprove(IERC20(target), to_vault, 0);
+            }
             SafeERC20.safeApprove(IERC20(target), to_vault, type(uint256).max);
         }
     }
 
-    function calc_withdraw_one_coin(
+    function _calc_withdraw_one_coin(
         address pool,
         uint256 amount,
         uint128 n
@@ -612,6 +631,72 @@ contract VaultSwapper is Initializable {
         } else {
             return pool;
         }
+    }
+
+    function _exchange(address token, address pool, uint256 amount, uint128 n, uint128 m) internal returns (uint256) {
+        uint256 amountBefore = IERC20(token).balanceOf(address(this));
+
+        pool.call(
+            abi.encodeWithSignature(
+                "exchange(uint256,uint256,uint256,uint256)",
+                uint256(n),
+                uint256(m),
+                amount,
+                1
+            )
+        );
+    
+        uint256 newAmount = IERC20(token).balanceOf(address(this));
+
+        if (newAmount > amountBefore) {
+            return newAmount;
+        }
+
+        pool.call(
+            abi.encodeWithSignature(
+                "exchange(int128,int128,uint256,uint256)",
+                int128(n),
+                int128(m),
+                amount,
+                1
+            )
+        );
+    
+        newAmount = IERC20(token).balanceOf(address(this));
+        require(newAmount > amountBefore, "!exchange");
+        return newAmount;
+    }
+
+    function _calc_exchange(address pool, uint256 amount, uint128 n, uint128 m) internal view returns (uint256) {
+        (bool success, bytes memory returnData)  = pool.staticcall(
+            abi.encodeWithSignature(
+                "get_dy(uint256,uint256,uint256)",
+                uint256(n),
+                uint256(m),
+                amount
+            )
+        );
+        if (success) {
+            return abi.decode(returnData, (uint256));
+        }
+        (success, returnData) = pool.staticcall(
+            abi.encodeWithSignature(
+                "get_dy(int128,int128,uint256)",
+                int128(n),
+                int128(m),
+                amount
+            )
+        );
+
+        require(success, "!success");
+
+        return abi.decode(returnData, (uint256));
+    }
+
+    function _get_lp_token_from_pool(address pool) internal view returns(address) {
+        address token = registry.get_lp_token(pool);
+        if (token != address(0x0)) return token;
+        return pool;
     }
 
     function _get_n_coins(address pool) internal view returns (uint256) {
