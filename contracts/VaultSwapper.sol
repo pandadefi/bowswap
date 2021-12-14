@@ -65,12 +65,27 @@ interface StableSwap {
         view
         returns (uint256);
 
+    function calc_token_amount(uint256[2] calldata amounts)
+        external
+        view
+        returns (uint256);
+
     function calc_token_amount(uint256[3] calldata amounts, bool is_deposit)
         external
         view
         returns (uint256);
 
+    function calc_token_amount(uint256[3] calldata amounts)
+        external
+        view
+        returns (uint256);
+
     function calc_token_amount(uint256[4] calldata amounts, bool is_deposit)
+        external
+        view
+        returns (uint256);
+
+    function calc_token_amount(uint256[4] calldata amounts)
         external
         view
         returns (uint256);
@@ -88,6 +103,7 @@ interface Registry {
 
 interface FactoryRegistry {
     function get_coins(address) external view returns (address[4] memory);
+
     function get_n_coins(address) external view returns (uint256);
 }
 
@@ -96,11 +112,11 @@ contract VaultSwapper is Initializable {
         Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
     FactoryRegistry constant factory_registry =
         FactoryRegistry(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
-    
-    uint256 constant private MIN_AMOUNT_OUT = 1;
-    uint256 constant private MAX_DONATION = 10_000;
-    uint256 constant private DEFAULT_DONATION = 30;
-    uint256 constant private UNKNOWN_ORIGIN = 0;
+
+    uint256 private constant MIN_AMOUNT_OUT = 1;
+    uint256 private constant MAX_DONATION = 10_000;
+    uint256 private constant DEFAULT_DONATION = 30;
+    uint256 private constant UNKNOWN_ORIGIN = 0;
     address public owner;
 
     event Orgin(uint256 origin);
@@ -110,7 +126,7 @@ contract VaultSwapper is Initializable {
         uint128 n;
     }
 
-    function initialize(address _owner) initializer public {
+    function initialize(address _owner) public initializer {
         owner = _owner;
     }
 
@@ -168,7 +184,14 @@ contract VaultSwapper is Initializable {
                 signature
             )
         );
-        metapool_swap(from_vault, to_vault, amount, min_amount_out, donation, origin);
+        metapool_swap(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            donation,
+            origin
+        );
     }
 
     /**
@@ -187,7 +210,14 @@ contract VaultSwapper is Initializable {
         uint256 amount,
         uint256 min_amount_out
     ) public {
-        metapool_swap(from_vault, to_vault, amount, min_amount_out, DEFAULT_DONATION, UNKNOWN_ORIGIN);
+        metapool_swap(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            DEFAULT_DONATION,
+            UNKNOWN_ORIGIN
+        );
     }
 
     function metapool_swap(
@@ -226,7 +256,7 @@ contract VaultSwapper is Initializable {
         );
 
         uint256 target_amount = IERC20(target).balanceOf(address(this));
-        if(donation != 0) {
+        if (donation != 0) {
             uint256 donating = (target_amount * donation) / MAX_DONATION;
             SafeERC20.safeTransfer(IERC20(target), owner, donating);
             target_amount -= donating;
@@ -274,7 +304,7 @@ contract VaultSwapper is Initializable {
             [0, amount_out],
             true
         );
-        amount_out -= amount_out * donation / MAX_DONATION;
+        amount_out -= (amount_out * donation) / MAX_DONATION;
         return
             (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
@@ -339,7 +369,15 @@ contract VaultSwapper is Initializable {
         uint256 min_amount_out,
         Swap[] calldata instructions
     ) public {
-        swap(from_vault, to_vault, amount, min_amount_out, instructions, DEFAULT_DONATION, UNKNOWN_ORIGIN);
+        swap(
+            from_vault,
+            to_vault,
+            amount,
+            min_amount_out,
+            instructions,
+            DEFAULT_DONATION,
+            UNKNOWN_ORIGIN
+        );
     }
 
     function swap(
@@ -397,16 +435,16 @@ contract VaultSwapper is Initializable {
 
         require(target == token, "!path");
 
-        if(donation != 0) {
+        if (donation != 0) {
             uint256 donating = (amount * donation) / MAX_DONATION;
             SafeERC20.safeTransfer(IERC20(target), owner, donating);
             amount -= donating;
         }
         approve(target, to_vault, amount);
-        uint256 out  = Vault(to_vault).deposit(amount, msg.sender);
+        uint256 out = Vault(to_vault).deposit(amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
-        if (origin != UNKNOWN_ORIGIN){
+        if (origin != UNKNOWN_ORIGIN) {
             emit Orgin(origin);
         }
     }
@@ -464,20 +502,43 @@ contract VaultSwapper is Initializable {
                 list[instructions[i].n] = amount;
 
                 if (n_coins == 2) {
-                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                    try
+                        StableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1]],
                             true
-                        );
+                        )
+                    returns (uint256 _amount) {
+                        amount = _amount;
+                    } catch {
+                        amount = StableSwap(instructions[i].pool)
+                            .calc_token_amount([list[0], list[1]]);
+                    }
                 } else if (n_coins == 3) {
-                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                    try
+                        StableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1], list[2]],
                             true
-                        );
+                        )
+                    returns (uint256 _amount) {
+                        amount = _amount;
+                    } catch {
+                        amount = StableSwap(instructions[i].pool)
+                            .calc_token_amount([list[0], list[1], list[2]]);
+                    }
                 } else if (n_coins == 4) {
-                    amount = StableSwap(instructions[i].pool).calc_token_amount(
+                    try
+                        StableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1], list[2], list[3]],
                             true
-                        );
+                        )
+                    returns (uint256 _amount) {
+                        amount = _amount;
+                    } catch {
+                        amount = StableSwap(instructions[i].pool)
+                            .calc_token_amount(
+                                [list[0], list[1], list[2], list[3]]
+                            );
+                    }
                 }
             } else {
                 amount = calc_withdraw_one_coin(
@@ -487,7 +548,7 @@ contract VaultSwapper is Initializable {
                 );
             }
         }
-        amount -= amount * donation / MAX_DONATION;
+        amount -= (amount * donation) / MAX_DONATION;
         return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
     }
 
@@ -530,13 +591,21 @@ contract VaultSwapper is Initializable {
         return abi.decode(returnData, (uint256));
     }
 
-    function _get_coin(address pool, uint256 n) internal view returns(address) {
+    function _get_coin(address pool, uint256 n)
+        internal
+        view
+        returns (address)
+    {
         address token = registry.get_coins(pool)[n];
         if (token != address(0x0)) return token;
         return factory_registry.get_coins(pool)[n];
     }
 
-    function _get_pool_from_lp_token(address lp) internal view returns(address) {
+    function _get_pool_from_lp_token(address lp)
+        internal
+        view
+        returns (address)
+    {
         address pool = registry.get_pool_from_lp_token(lp);
         if (pool == address(0x0)) {
             return lp;
@@ -545,7 +614,7 @@ contract VaultSwapper is Initializable {
         }
     }
 
-    function _get_n_coins(address pool) internal view returns(uint256) {
+    function _get_n_coins(address pool) internal view returns (uint256) {
         uint256 num = registry.get_n_coins(pool)[0];
         if (num != 0) return num;
         return factory_registry.get_n_coins(pool);
