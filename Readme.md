@@ -12,12 +12,13 @@ Swap between crv-metapool vaults.
 ### Requirements
 
 - Python 3.8 or above
-- ganache-cli
+- yarn
 
 ### Setup
 
 ```
 pip install -r requirements-dev.txt
+yarn
 ```
 
 In order to work on this project you need to set the following enviroment variables:
@@ -41,7 +42,7 @@ brownie test
 On a first shell tab run:
 
 ```
-ganache-cli --port 8545 --gasLimit 12000000 --accounts 10 --hardfork istanbul --mnemonic brownie --fork $WEB3_INFURA_PROJECT_ID --chainId 1
+npx hardhat node --port 8545 --fork https://mainnet.infura.io/v3/YOUR_INFURA_ID
 ```
 
 On a second shell tab:

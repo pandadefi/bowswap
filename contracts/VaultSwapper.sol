@@ -122,7 +122,9 @@ contract VaultSwapper is Initializable {
     event Orgin(uint256 origin);
 
     enum Action {
-        Deposit, Withdraw, Swap
+        Deposit,
+        Withdraw,
+        Swap
     }
 
     struct Swap {
@@ -439,7 +441,13 @@ contract VaultSwapper is Initializable {
             } else {
                 approve(token, instructions[i].pool, amount);
                 token = _get_coin(instructions[i].pool, instructions[i].m);
-                amount = _exchange(token, instructions[i].pool, amount, instructions[i].n, instructions[i].m);
+                amount = _exchange(
+                    token,
+                    instructions[i].pool,
+                    amount,
+                    instructions[i].n,
+                    instructions[i].m
+                );
             }
         }
 
@@ -559,9 +567,12 @@ contract VaultSwapper is Initializable {
                     instructions[i].n
                 );
             } else {
-                amount = _calc_exchange(instructions[i].pool,
+                amount = _calc_exchange(
+                    instructions[i].pool,
                     amount,
-                    instructions[i].n, instructions[i].m);
+                    instructions[i].n,
+                    instructions[i].m
+                );
             }
         }
         amount -= (amount * donation) / MAX_DONATION;
@@ -633,7 +644,13 @@ contract VaultSwapper is Initializable {
         }
     }
 
-    function _exchange(address token, address pool, uint256 amount, uint128 n, uint128 m) internal returns (uint256) {
+    function _exchange(
+        address token,
+        address pool,
+        uint256 amount,
+        uint128 n,
+        uint128 m
+    ) internal returns (uint256) {
         uint256 amountBefore = IERC20(token).balanceOf(address(this));
 
         pool.call(
@@ -645,7 +662,7 @@ contract VaultSwapper is Initializable {
                 1
             )
         );
-    
+
         uint256 newAmount = IERC20(token).balanceOf(address(this));
 
         if (newAmount > amountBefore) {
@@ -661,14 +678,19 @@ contract VaultSwapper is Initializable {
                 1
             )
         );
-    
+
         newAmount = IERC20(token).balanceOf(address(this));
         require(newAmount > amountBefore, "!exchange");
         return newAmount;
     }
 
-    function _calc_exchange(address pool, uint256 amount, uint128 n, uint128 m) internal view returns (uint256) {
-        (bool success, bytes memory returnData)  = pool.staticcall(
+    function _calc_exchange(
+        address pool,
+        uint256 amount,
+        uint128 n,
+        uint128 m
+    ) internal view returns (uint256) {
+        (bool success, bytes memory returnData) = pool.staticcall(
             abi.encodeWithSignature(
                 "get_dy(uint256,uint256,uint256)",
                 uint256(n),
@@ -693,7 +715,11 @@ contract VaultSwapper is Initializable {
         return abi.decode(returnData, (uint256));
     }
 
-    function _get_lp_token_from_pool(address pool) internal view returns(address) {
+    function _get_lp_token_from_pool(address pool)
+        internal
+        view
+        returns (address)
+    {
         address token = registry.get_lp_token(pool);
         if (token != address(0x0)) return token;
         return pool;

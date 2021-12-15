@@ -6,9 +6,9 @@ from eth_account.messages import encode_structured_data
 
 
 def chain_id():
-    # BUG: ganache-cli provides mismatching chain.id and chainid()
+    # BUG: hardhat provides mismatching chain.id and chainid()
     # https://github.com/trufflesuite/ganache/issues/1643
-    return 1 if web3.clientVersion.startswith("EthereumJS") else chain.id
+    return 1 if web3.clientVersion.startswith("HardhatNetwork") else chain.id
 
 
 @pytest.fixture
