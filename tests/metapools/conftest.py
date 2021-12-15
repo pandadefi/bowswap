@@ -27,6 +27,7 @@ CRV_META_BTC_VAULT = [
 EUR_POOLS = [  # Not real metapool but coin 1 = sEUR so that can used same code
     "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
     "0x0d4EA8536F9A13e4FBa16042a46c30f092b06aA5",
+    "0x67e019bfbd5a67207755D04467D6A70c0B75bF60",
 ]
 
 ALL_PAIRS = (

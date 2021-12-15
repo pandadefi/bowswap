@@ -27,8 +27,8 @@ jobs:
       with:
         node-version: '12.x'
 
-    - name: Install ganache
-      run: npm install -g ganache-cli@6.12.1
+    - name: Install hardhat
+      run: yarn add hardhat --dev
 
     - name: Set up python 3.8
       uses: actions/setup-python@v2
@@ -52,8 +52,20 @@ jobs:
     - name: Install python dependencies
       run: pip install -r requirements-dev.txt
 
-    - name: Run Tests
+    - name: Run generic pool tests
       env:
         ETHERSCAN_TOKEN: MW5CQA6QK5YMJXP2WP3RA36HM5A7RA1IHA
         WEB3_INFURA_PROJECT_ID: b7821200399e4be2b4e5dbdf06fbe85b
-      run: brownie test
+      run: brownie test tests/generic_pools/
+
+    - name: Run metapools tests
+      env:
+        ETHERSCAN_TOKEN: MW5CQA6QK5YMJXP2WP3RA36HM5A7RA1IHA
+        WEB3_INFURA_PROJECT_ID: b7821200399e4be2b4e5dbdf06fbe85b
+      run: brownie test tests/metapools/
+
+    - name: Run vempure tests
+      env:
+        ETHERSCAN_TOKEN: MW5CQA6QK5YMJXP2WP3RA36HM5A7RA1IHA
+        WEB3_INFURA_PROJECT_ID: b7821200399e4be2b4e5dbdf06fbe85b
+      run: brownie test tests/yvempire/
