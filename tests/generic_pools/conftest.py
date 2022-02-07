@@ -6,8 +6,7 @@ from brownie import Contract
 
 ALL_PAIRS = [
     [
-        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0x84E13785B5a27879921D6F685f041421C7F482dA",
+        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417", "0x84E13785B5a27879921D6F685f041421C7F482dA",
         [(1, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1, 0)],
     ],  # META to 3CRV
     [
@@ -16,7 +15,7 @@ ALL_PAIRS = [
         [(0, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1, 0)],
     ],  # 3CRV to META
     [
-        "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+        "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
         [
             (0, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1, 0),
@@ -25,21 +24,20 @@ ALL_PAIRS = [
     ],  # USDC vault to cuve vault
     [
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+        "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
         [
             (1, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1, 0),
             (1, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 1, 0),
         ],
-    ],  # cuve vault to USDC vault
+    ],
     [
-        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+        "0xf8768814b88281DE4F532a3beEfA5b85B69b9324", "0xd8C620991b8E626C099eAaB29B1E3eEa279763bb",
         [
-            (1, "0x42d7025938bEc20B69cBae5A77421082407f053A", 1, 0),
-            (1, "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", 2, 0),
-            (0, "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46", 0, 0),
-        ],
-    ],  # USDP crv to tricrv
+            (1, "0xEcd5e75AFb02eFa118AF914515D6521aaBd189F1", 1, 0),
+            (2, "0x890f4e345B1dAED0367A877a1612f86A1f86985f", 1, 0),
+            (0, "0x55A8a39bc9694714E2874c1ce77aa1E599461E18", 1, 0)
+	    ]
+    ],
     [
         "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
         "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
