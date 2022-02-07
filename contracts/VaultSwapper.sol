@@ -223,7 +223,8 @@ contract VaultSwapper is Initializable {
             amount,
             address(this)
         );
-        _remove_liquidity_one_coin(underlying_pool, underlying_amount, 1, 1);
+        remove_liquidity_one_coin(target, underlying_pool, underlying_amount, 1, 1);
+
 
         IERC20 underlying_coin = IERC20(_get_coin(underlying_pool, 1));
         uint256 liquidity_amount = underlying_coin.balanceOf(address(this));
@@ -443,7 +444,7 @@ contract VaultSwapper is Initializable {
                 amount = IERC20(token).balanceOf(address(this));
             } else if (instructions[i].action == Action.Withdraw) {
                 token = _get_coin(instructions[i].pool, instructions[i].n);
-                amount = remove_liquidity_one_coin(token, instructions[i].pool, amount, instructions[i].n);
+                amount = remove_liquidity_one_coin(token, instructions[i].pool, amount, instructions[i].n, 1);
             } else {
                 approve(token, instructions[i].pool, amount);
                 token = _get_coin(instructions[i].pool, instructions[i].m);
@@ -584,12 +585,12 @@ contract VaultSwapper is Initializable {
     **  @param n Index in the coins of the pool to remove. pool.coins[n] should be equal to token
     **  @return the new amount of tokens available
     **********************************************************************************************/
-    function remove_liquidity_one_coin(address token, address pool, uint256 amount, uint128 n) internal returns (uint256) {
+    function remove_liquidity_one_coin(address token, address pool, uint256 amount, uint128 i, uint256 min_amount) internal returns (uint256) {
         uint256 amountBefore = IERC20(token).balanceOf(address(this));
         if (pool == TRI_CRYPTO_POOL) {
-            StableSwap(pool).remove_liquidity_one_coin(amount, uint256(n), min_amount);
+            StableSwap(pool).remove_liquidity_one_coin(amount, uint256(i), min_amount);
         } else {
-            StableSwap(pool).remove_liquidity_one_coin(amount, int128(n), min_amount);
+            StableSwap(pool).remove_liquidity_one_coin(amount, int128(i), min_amount);
         }
         uint256 newAmount = IERC20(token).balanceOf(address(this));
         require(newAmount > amountBefore, "!remove");
