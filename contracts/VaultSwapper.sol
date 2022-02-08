@@ -223,11 +223,9 @@ contract VaultSwapper is Initializable {
             amount,
             address(this)
         );
-        remove_liquidity_one_coin(underlying, underlying_pool, underlying_amount, 1, 1);
-
 
         IERC20 underlying_coin = IERC20(_get_coin(underlying_pool, 1));
-        uint256 liquidity_amount = underlying_coin.balanceOf(address(this));
+        uint256 liquidity_amount = remove_liquidity_one_coin(address(underlying_coin), underlying_pool, underlying_amount, 1, 1);
 
         underlying_coin.approve(target_pool, liquidity_amount);
 
