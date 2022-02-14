@@ -31,7 +31,7 @@ def cusdc():
 
 @pytest.fixture()
 def cusdc_whale():
-    yield "0xb3bd459e0598dde1fe84b1d0a1430be175b5d5be"
+    yield "0xabde2f02fe84e083e1920471b54c3612456365ef"
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def ausdcv2():
 
 @pytest.fixture()
 def ausdcv2_whale():
-    yield "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296"
+    yield "0xd4e94061183b2dbf24473f28a3559cf4de4459db"
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def ausdt():
 
 @pytest.fixture()
 def ausdt_whale():
-    yield "0xe36e383382f0668f5f806ebca586a765a1ec9e19"
+    yield "0x83f798e925bcd4017eb265844fddabb448f1707d"
 
 
 @pytest.fixture
