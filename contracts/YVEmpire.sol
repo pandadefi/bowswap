@@ -4,52 +4,18 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-interface LendingPool {
-    function withdraw(
-        address asset,
-        uint256 amount,
-        address to
-    ) external;
-}
-
-interface ATokenV1 {
-    function underlyingAssetAddress() external view returns (address);
-
-    function redeem(uint256 _amount) external;
-}
-
-interface ATokenV2 {
-    function UNDERLYING_ASSET_ADDRESS() external view returns (address);
-}
-
-interface CToken {
-    function redeem(uint256 redeemTokens) external returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    function allowance(address owner, address spender)
-        external
-        returns (uint256);
-
-    function underlying() external view returns (address);
-}
-
-interface Registry {
-    function latestVault(address) external view returns (address);
-}
-
-interface Vault {
-    function deposit(uint256 amount) external returns (uint256);
-
-    function transfer(address to, uint256 amount) external;
-}
+import "./interfaces/ILendingPool.sol";
+import "./interfaces/IATokenV1.sol";
+import "./interfaces/IATokenV2.sol";
+import "./interfaces/ICToken.sol";
+import "./interfaces/IVault.sol";
+import "./interfaces/IYearnRegistry.sol";
 
 contract YVEmpire {
-    Registry constant registry =
-        Registry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
-    LendingPool constant lendingPool =
-        LendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
+    IYearnRegistry constant registry =
+        IYearnRegistry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
+    ILendingPool constant lendingPool =
+        ILendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
 
     enum Service {
         Compound,
@@ -96,7 +62,7 @@ contract YVEmpire {
 
     function depositIntoVault(IERC20 token) internal {
         uint256 balance = token.balanceOf(address(this));
-        Vault vault = Vault(registry.latestVault(address(token)));
+        IVault vault = IVault(registry.latestVault(address(token)));
         approve(token, address(vault), balance);
         uint256 vaultBalance = vault.deposit(balance);
         vault.transfer(msg.sender, vaultBalance);
@@ -104,7 +70,7 @@ contract YVEmpire {
 
     function swapCompound(address coin) internal {
         uint256 amount = transferToSelf(coin);
-        CToken cToken = CToken(coin);
+        ICToken cToken = ICToken(coin);
         IERC20 underlying = IERC20(cToken.underlying());
         require(cToken.redeem(amount) == 0, "!redeem");
 
@@ -113,7 +79,7 @@ contract YVEmpire {
 
     function swapAaveV1(address coin) internal {
         transferToSelf(coin);
-        ATokenV1 aToken = ATokenV1(coin);
+        IATokenV1 aToken = IATokenV1(coin);
         IERC20 underlying = IERC20(aToken.underlyingAssetAddress());
         aToken.redeem(type(uint256).max);
 
@@ -122,7 +88,7 @@ contract YVEmpire {
 
     function swapAaveV2(address coin) internal {
         transferToSelf(coin);
-        IERC20 underlying = IERC20(ATokenV2(coin).UNDERLYING_ASSET_ADDRESS());
+        IERC20 underlying = IERC20(IATokenV2(coin).UNDERLYING_ASSET_ADDRESS());
         lendingPool.withdraw(
             address(underlying),
             type(uint256).max,
