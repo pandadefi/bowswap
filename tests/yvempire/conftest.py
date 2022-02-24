@@ -50,7 +50,7 @@ def ausdcv2():
 
 @pytest.fixture()
 def ausdcv2_whale():
-    yield "0xd4e94061183b2dbf24473f28a3559cf4de4459db"
+    yield "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296"
 
 
 @pytest.fixture
