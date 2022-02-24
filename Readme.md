@@ -17,7 +17,7 @@ Swap between crv-metapool vaults.
 ### Setup
 
 ```
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 yarn
 ```
 

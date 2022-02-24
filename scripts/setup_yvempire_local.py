@@ -11,42 +11,42 @@ TRANSFERS = [
     (
         "0xbcca60bb61934080951369a648fb03df4f96263c",  # aUSDC v2
         AAVE_V2_WHALE,
-        1000 * 10 ** 6,
+        1000 * 10**6,
     ),
     (
         "0x3ed3b47dd13ec9a98b44e6204a523e766b225811",  # aUSDT v2
         AAVE_V2_WHALE,
-        1000 * 10 ** 6,
+        1000 * 10**6,
     ),
     (
         "0x030ba81f1c18d280636f32af80b9aad02cf0854e",  # aWETH v2
         AAVE_V2_WHALE,
-        2 * 10 ** 18,
+        2 * 10**18,
     ),
     (
         "0x71fc860F7D3A592A4a98740e39dB31d25db65ae8",  # aUSDT v1
         AAVE_V1_WHALE,
-        1000 * 10 ** 6,
+        1000 * 10**6,
     ),
     (
         "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",  # aDAI v1
         AAVE_V1_WHALE,
-        1000 * 10 ** 18,
+        1000 * 10**18,
     ),
     (
         "0x39aa39c021dfbae8fac545936693ac917d5e7563",  # cUSDC
         COMP_WHALE,
-        1000 * 10 ** 18,
+        1000 * 10**18,
     ),
     (
         "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",  # cETH
         COMP_WHALE,
-        2 * 10 ** 8,
+        2 * 10**8,
     ),
     (
         "0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9",  # cUSDT
         COMP_WHALE,
-        1000 * 10 ** 8,
+        1000 * 10**8,
     ),
 ]
 
@@ -77,7 +77,7 @@ def main():
     print("YVEmpire deployed at:" + str(swapper))
 
     to = get_address("send seed funds to")
-    dev.transfer(to, 1 * 10 ** 18)
+    dev.transfer(to, 1 * 10**18)
     for (vault, whale, amount) in TRANSFERS:
         token = Contract(vault)
         token.transfer(to, amount, {"from": whale})

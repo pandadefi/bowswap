@@ -7,8 +7,9 @@
     "solhint-plugin-prettier": "^0.0.5"
   },
   "scripts": {
-    "format": "prettier --write 'contracts/**/*.sol'",
+    "black": "black --check --include \"(tests|scripts)\" .",
+    "format": "prettier --write '**/*.*(sol|json)'",
     "format:check": "prettier --check '**/*.*(sol|json)'",
-    "hint": "solhint \"contracts/**/*.sol\""
+    "lint": "solhint \"contracts/**/*.sol\""
   }
 }

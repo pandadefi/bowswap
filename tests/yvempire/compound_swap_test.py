@@ -4,7 +4,7 @@ from brownie import Contract
 
 
 def test_swap(user, cusdc, get_cusdc, yv_empire):
-    amount = 1_000 * 10 ** 8
+    amount = 1_000 * 10**8
     get_cusdc(user, amount)
     cusdc.approve(yv_empire, amount, {"from": user})
     yv_empire.migrate([(0, cusdc)], {"from": user})
