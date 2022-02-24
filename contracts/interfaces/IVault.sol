@@ -28,8 +28,6 @@ interface IVault is IERC20 {
 
     function totalAssets() external view returns (uint256);
 
-    function transfer(address to, uint256 amount) external;
-
     function permit(
         address owner,
         address spender,
