@@ -19,7 +19,10 @@ contract VaultSwapper is Initializable {
     uint256 private constant _MAX_DONATION = 10_000;
     uint256 private constant _DEFAULT_DONATION = 30;
     uint256 private constant _UNKNOWN_ORIGIN = 0;
+    address private constant _TRI_CRYPTO_POOL =
+        0x80466c64868E1ab14a1Ddf27A676C3fcBE638Fe5;
     address public owner;
+    mapping(address => uint256) public numCoins;
 
     event Orgin(uint256 origin);
 
@@ -149,14 +152,15 @@ contract VaultSwapper is Initializable {
             amount,
             address(this)
         );
-        IStableSwap(underlyingPool).remove_liquidity_one_coin(
+
+        IERC20 underlyingCoin = IERC20(_getCoin(underlyingPool, 1));
+        uint256 liquidityAmount = _removeLiquidityOneCoin(
+            address(underlyingCoin),
+            underlyingPool,
             underlyingAmount,
             1,
             1
         );
-
-        IERC20 underlyingCoin = IERC20(_getCoin(underlyingPool, 1));
-        uint256 liquidityAmount = underlyingCoin.balanceOf(address(this));
 
         underlyingCoin.approve(targetPool, liquidityAmount);
 
@@ -206,10 +210,8 @@ contract VaultSwapper is Initializable {
 
         uint256 amountOut = (pricePerShareFrom * amount) /
             (10**IVault(fromVault).decimals());
-        amountOut = IStableSwap(underlyingPool).calc_withdraw_one_coin(
-            amountOut,
-            1
-        );
+
+        amountOut = _calcWithdrawOneCoin(underlyingPool, amountOut, 1);
         amountOut = IStableSwap(targetPool).calc_token_amount(
             [0, amountOut],
             true
@@ -338,7 +340,8 @@ contract VaultSwapper is Initializable {
                     token,
                     instructions[i].pool,
                     amount,
-                    instructions[i].n
+                    instructions[i].n,
+                    1
                 );
             } else {
                 _approve(token, instructions[i].pool, amount);
@@ -361,6 +364,10 @@ contract VaultSwapper is Initializable {
             amount -= donating;
         }
         _approve(target, toVault, amount);
+        require(
+            IVault(toVault).availableDepositLimit() >= amount,
+            "!depositLimit"
+        );
         uint256 out = IVault(toVault).deposit(amount, msg.sender);
 
         require(out >= minAmountOut, "out too low");
@@ -373,36 +380,25 @@ contract VaultSwapper is Initializable {
         address token,
         address pool,
         uint256 amount,
-        uint128 n
+        uint128 i,
+        uint256 minAmount
     ) internal returns (uint256) {
         uint256 amountBefore = IERC20(token).balanceOf(address(this));
-        // solhint-disable-next-line avoid-low-level-calls
-        pool.call(
-            abi.encodeWithSignature(
-                "remove_liquidity_one_coin(uint256,uint256,uint256)",
+        if (pool == _TRI_CRYPTO_POOL) {
+            IStableSwap(pool).remove_liquidity_one_coin(
                 amount,
-                uint256(n),
-                1
-            )
-        );
-        uint256 newAmount = IERC20(token).balanceOf(address(this));
-
-        if (newAmount > amountBefore) {
-            return newAmount;
+                uint256(i),
+                minAmount
+            );
+        } else {
+            IStableSwap(pool).remove_liquidity_one_coin(
+                amount,
+                int128(i),
+                minAmount
+            );
         }
-        // solhint-disable-next-line avoid-low-level-calls
-        pool.call(
-            abi.encodeWithSignature(
-                "remove_liquidity_one_coin(uint256,int128,uint256)",
-                amount,
-                int128(n),
-                1
-            )
-        );
-
-        newAmount = IERC20(token).balanceOf(address(this));
+        uint256 newAmount = IERC20(token).balanceOf(address(this));
         require(newAmount > amountBefore, "!remove");
-
         return newAmount;
     }
 
@@ -420,9 +416,9 @@ contract VaultSwapper is Initializable {
             (amount * pricePerShareFrom) /
             (10**IVault(fromVault).decimals());
         for (uint256 i = 0; i < instructions.length; i++) {
-            uint256 nCoins = _getNCoins(instructions[i].pool);
+            uint256 nCoins = _getViewNCoins(instructions[i].pool);
             if (instructions[i].action == Action.Deposit) {
-                nCoins = _getNCoins(instructions[i].pool);
+                nCoins = _getViewNCoins(instructions[i].pool);
                 uint256[] memory list = new uint256[](nCoins);
                 list[instructions[i].n] = amount;
 
@@ -503,27 +499,10 @@ contract VaultSwapper is Initializable {
         uint256 amount,
         uint128 n
     ) internal view returns (uint256) {
-        (bool success, bytes memory returnData) = pool.staticcall(
-            abi.encodeWithSignature(
-                "calc_withdraw_one_coin(uint256,uint256)",
-                amount,
-                uint256(n)
-            )
-        );
-        if (success) {
-            return abi.decode(returnData, (uint256));
+        if (pool == _TRI_CRYPTO_POOL) {
+            return IStableSwap(pool).calc_withdraw_one_coin(amount, uint256(n));
         }
-        (success, returnData) = pool.staticcall(
-            abi.encodeWithSignature(
-                "calc_withdraw_one_coin(uint256,int128)",
-                amount,
-                int128(n)
-            )
-        );
-
-        require(success, "!success");
-
-        return abi.decode(returnData, (uint256));
+        return IStableSwap(pool).calc_withdraw_one_coin(amount, int128(n));
     }
 
     function _getCoin(address pool, uint256 n) internal view returns (address) {
@@ -536,9 +515,8 @@ contract VaultSwapper is Initializable {
         address pool = _REGISTRY.get_pool_from_lp_token(lp);
         if (pool == address(0x0)) {
             return lp;
-        } else {
-            return pool;
         }
+        return pool;
     }
 
     function _exchange(
@@ -549,70 +527,32 @@ contract VaultSwapper is Initializable {
         uint128 m
     ) internal returns (uint256) {
         uint256 amountBefore = IERC20(token).balanceOf(address(this));
-
-        // solhint-disable-next-line avoid-low-level-calls
-        pool.call(
-            abi.encodeWithSignature(
-                "exchange(uint256,uint256,uint256,uint256)",
+        if (pool == _TRI_CRYPTO_POOL) {
+            IStableSwap(pool).exchange(
                 uint256(n),
                 uint256(m),
                 amount,
-                1
-            )
-        );
-
-        uint256 newAmount = IERC20(token).balanceOf(address(this));
-
-        if (newAmount > amountBefore) {
-            return newAmount;
+                1,
+                false
+            );
+        } else {
+            IStableSwap(pool).exchange(int128(n), int128(m), amount, 1);
         }
-
-        // solhint-disable-next-line avoid-low-level-calls
-        pool.call(
-            abi.encodeWithSignature(
-                "exchange(int128,int128,uint256,uint256)",
-                int128(n),
-                int128(m),
-                amount,
-                1
-            )
-        );
-
-        newAmount = IERC20(token).balanceOf(address(this));
+        uint256 newAmount = IERC20(token).balanceOf(address(this));
         require(newAmount > amountBefore, "!exchange");
         return newAmount;
     }
 
-    // solhint-disable-next-line avoid-low-level-calls
     function _calcExchange(
         address pool,
         uint256 amount,
         uint128 n,
         uint128 m
     ) internal view returns (uint256) {
-        (bool success, bytes memory returnData) = pool.staticcall(
-            abi.encodeWithSignature(
-                "get_dy(uint256,uint256,uint256)",
-                uint256(n),
-                uint256(m),
-                amount
-            )
-        );
-        if (success) {
-            return abi.decode(returnData, (uint256));
+        if (pool == _TRI_CRYPTO_POOL) {
+            return IStableSwap(pool).get_dy(uint256(n), uint256(m), amount);
         }
-        (success, returnData) = pool.staticcall(
-            abi.encodeWithSignature(
-                "get_dy(int128,int128,uint256)",
-                int128(n),
-                int128(m),
-                amount
-            )
-        );
-
-        require(success, "!success");
-
-        return abi.decode(returnData, (uint256));
+        return IStableSwap(pool).get_dy(int128(n), int128(m), amount);
     }
 
     function _getLpTokenFromPool(address pool) internal view returns (address) {
@@ -621,9 +561,39 @@ contract VaultSwapper is Initializable {
         return pool;
     }
 
-    function _getNCoins(address pool) internal view returns (uint256) {
-        uint256 num = _REGISTRY.get_n_coins(pool)[0];
+    function _getNCoins(address pool) internal returns (uint256) {
+        uint256 num = numCoins[pool];
         if (num != 0) return num;
-        return _FACTORY_REGISTRY.get_n_coins(pool);
+
+        num = _REGISTRY.get_n_coins(pool)[0];
+        if (num != 0) {
+            numCoins[pool] = num;
+            return num;
+        }
+
+        address[4] memory coins = _FACTORY_REGISTRY.get_coins(pool);
+        for (uint256 index = 0; index < coins.length; index++) {
+            if (coins[index] != address(0)) {
+                num++;
+            }
+        }
+        numCoins[pool] = num;
+        return num;
+    }
+
+    function _getViewNCoins(address pool) internal view returns (uint256) {
+        uint256 num = numCoins[pool];
+        if (num != 0) return num;
+
+        num = _REGISTRY.get_n_coins(pool)[0];
+        if (num != 0) return num;
+
+        address[4] memory coins = _FACTORY_REGISTRY.get_coins(pool);
+        for (uint256 index = 0; index < coins.length; index++) {
+            if (coins[index] != address(0)) {
+                num++;
+            }
+        }
+        return num;
     }
 }
