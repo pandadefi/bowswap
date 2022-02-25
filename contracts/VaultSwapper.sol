@@ -321,7 +321,6 @@ contract VaultSwapper is Initializable {
         @param amount The amount of tokens you whish to use from the fromVault
         @param minAmountOut The minimal amount of tokens you would expect from the toVault
         @param instructions list of instruction/path to follow to be able to get the desired amount out.
-        @param signature signature
     */
     function swap(
         address fromVault,
@@ -348,7 +347,6 @@ contract VaultSwapper is Initializable {
         @param amount The amount of tokens you whish to use from the fromVault
         @param minAmountOut The minimal amount of tokens you would expect from the toVault
         @param instructions list of instruction/path to follow to be able to get the desired amount out.
-        @param signature signature
         @param donation amount of donation to give to Bowswap
         @param origin tracking for partnership
     */
@@ -665,7 +663,10 @@ contract VaultSwapper is Initializable {
     /**
         @notice Wrapper around the pool function get_dy.
         @dev Tricrypto pool does not have the same signature and should be handle differently.
-        @param lp Address of the curve LP token to work with
+        @param pool address of the curve pool to use
+        @param amount amount to swap
+        @param n index of the first token to exchange
+        @param m index of the second token to exchange
         @return the pool with the relevant function, or the LP address if the pool is the LP
     */
     function _calcExchange(
