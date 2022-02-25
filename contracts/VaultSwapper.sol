@@ -49,8 +49,8 @@ contract VaultSwapper is Initializable {
         owner = newOwner;
     }
 
-    /*
-        @notice Swap with apoval using eip-2612
+    /**
+        @notice Swap with approval using eip-2612
         @param fromVault The vault tokens should be taken from
         @param toVault The vault tokens should be deposited to
         @param amount The amount of tokens you whish to use from the fromVault
@@ -78,6 +78,17 @@ contract VaultSwapper is Initializable {
         );
     }
 
+    /**
+        @notice Swap with approval using eip-2612, from a same metapool. Overloaded with two extra params.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param expiry signature expiry
+        @param signature signature
+        @param donation amount of donation to give to Bowswap
+        @param origin tracking for partnership
+    */
     function metapoolSwapWithSignature(
         address fromVault,
         address toVault,
@@ -109,9 +120,7 @@ contract VaultSwapper is Initializable {
 
     /**
         @notice swap tokens from one meta pool vault to an other
-        @dev Remove funds from a vault, move one side of 
-        the asset from one curve pool to an other and 
-        deposit into the new vault.
+        @dev Remove funds from a vault, move one side of  the asset from one curve pool to an other and deposit into the new vault.
         @param fromVault The vault tokens should be taken from
         @param toVault The vault tokens should be deposited to
         @param amount The amount of tokens you whish to use from the fromVault
@@ -133,6 +142,17 @@ contract VaultSwapper is Initializable {
         );
     }
 
+    /**
+        @notice swap tokens from one meta pool vault to an other. Overloaded with two extra params.
+        @dev Remove funds from a vault, move one side of the asset from one curve pool to an other
+        and  deposit into the new vault.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param donation amount of donation to give to Bowswap
+        @param origin tracking for partnership
+    */
     function metapoolSwap(
         address fromVault,
         address toVault,
@@ -191,8 +211,9 @@ contract VaultSwapper is Initializable {
         @param fromVault The vault tokens should be taken from
         @param toVault The vault tokens should be deposited to
         @param amount The amount of tokens you whish to use from the fromVault
+        @param donation amount of donation to give to Bowswap
         @return the amount of token shared expected in the toVault
-     */
+    */
     function metapoolEstimateOut(
         address fromVault,
         address toVault,
@@ -220,6 +241,15 @@ contract VaultSwapper is Initializable {
         return (amountOut * (10**IVault(toVault).decimals())) / pricePerShareTo;
     }
 
+    /**
+        @notice Swap with approval using eip-2612.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param instructions list of instruction/path to follow to be able to get the desired amount out.
+        @param signature signature
+    */
     function swapWithSignature(
         address fromVault,
         address toVault,
@@ -242,6 +272,17 @@ contract VaultSwapper is Initializable {
         );
     }
 
+    /**
+        @notice Swap with approval using eip-2612. Overloaded with two extra params.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param instructions list of instruction/path to follow to be able to get the desired amount out.
+        @param signature signature
+        @param donation amount of donation to give to Bowswap
+        @param origin tracking for partnership
+    */
     function swapWithSignature(
         address fromVault,
         address toVault,
@@ -273,6 +314,15 @@ contract VaultSwapper is Initializable {
         );
     }
 
+    /**
+        @notice Swap tokens from one vault to an other via a Curve pools path.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param instructions list of instruction/path to follow to be able to get the desired amount out.
+        @param signature signature
+    */
     function swap(
         address fromVault,
         address toVault,
@@ -291,6 +341,17 @@ contract VaultSwapper is Initializable {
         );
     }
 
+    /**
+        @notice Swap tokens from one vault to an other via a Curve pools path. Overloaded with two extra params.
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param minAmountOut The minimal amount of tokens you would expect from the toVault
+        @param instructions list of instruction/path to follow to be able to get the desired amount out.
+        @param signature signature
+        @param donation amount of donation to give to Bowswap
+        @param origin tracking for partnership
+    */
     // solhint-disable-next-line function-max-lines, code-complexity
     function swap(
         address fromVault,
@@ -376,6 +437,17 @@ contract VaultSwapper is Initializable {
         }
     }
 
+    /**
+        @notice Wrapper around the pool function remove_liquidity_one_coin. This function does not have any return value, so we wrap a balanceOf before and
+        after to get the updated amount.
+        @dev Tricrypto pool does not have the same signature and should be handle differently.
+        @param token Token that should be removed from pool
+        @param pool Address of the curve pool to work with
+        @param amount The amount of tokens we want to remove
+        @param i Index in the coins of the pool to remove. pool.coins[n] should be equal to token
+        @param minAmount The minimal amount of tokens you would expect
+        @return the new amount of tokens available
+    */
     function _removeLiquidityOneCoin(
         address token,
         address pool,
@@ -402,6 +474,15 @@ contract VaultSwapper is Initializable {
         return newAmount;
     }
 
+    /**
+        @notice estimate the amount of tokens out for a standard swap
+        @param fromVault The vault tokens should be taken from
+        @param toVault The vault tokens should be deposited to
+        @param amount The amount of tokens you whish to use from the fromVault
+        @param instructions list of instruction/path to follow to be able to get the desired amount
+        @param donation amount of donation to give to Bowswap
+        @return the amount of token shared expected in the toVault
+    */
     // solhint-disable-next-line function-max-lines
     function estimateOut(
         address fromVault,
@@ -480,6 +561,12 @@ contract VaultSwapper is Initializable {
         return (amount * (10**IVault(toVault).decimals())) / pricePerShareTo;
     }
 
+    /**
+        @notice Safer approve that will check for allowance and reset approval before giving it.
+        @param target erc20 to approve
+        @param toVault The operator
+        @param amount The amount of tokens you whish to use from the target
+    */
     function _approve(
         address target,
         address toVault,
@@ -494,6 +581,14 @@ contract VaultSwapper is Initializable {
         }
     }
 
+    /**
+        @notice Wrapper around the pool function calc_withdraw_one_coin.
+        @dev Tricrypto pool does not have the same signature and should be handle differently.
+        @param pool Address of the curve pool to work with
+        @param amount The amount of tokens we want to swap
+        @param n Index in the coins of the pool we want to withdraw.
+        @return the expected amount withdrawn from the pool
+    */
     function _calcWithdrawOneCoin(
         address pool,
         uint256 amount,
@@ -505,12 +600,25 @@ contract VaultSwapper is Initializable {
         return IStableSwap(pool).calc_withdraw_one_coin(amount, int128(n));
     }
 
+    /**
+        @notice Wrapper around the pool function get_coin.
+        @dev A pool can be registered either in the registry or in the factory registry, so we need to find in which it is used.
+        @param pool Address of the curve pool to work with
+        @param n Index in the coins we want to get.
+        @return the address of the token at index n
+    */
     function _getCoin(address pool, uint256 n) internal view returns (address) {
         address token = _REGISTRY.get_coins(pool)[n];
         if (token != address(0x0)) return token;
         return _FACTORY_REGISTRY.get_coins(pool)[n];
     }
 
+    /**
+        @notice Wrapper around the pool function get_pool_from_lp_token.
+        @dev A pool can be registered either in the registry or in the factory registry, so we need to find in which it is used.
+        @param lp Address of the curve LP token to work with
+        @return the pool with the relevant function, or the LP address if the pool is the LP
+    */
     function _getPoolFromLpToken(address lp) internal view returns (address) {
         address pool = _REGISTRY.get_pool_from_lp_token(lp);
         if (pool == address(0x0)) {
@@ -519,6 +627,17 @@ contract VaultSwapper is Initializable {
         return pool;
     }
 
+    /**
+        @notice Wrapper around the pool function exchange. This function does not have any return value, so we wrap a balanceOf before and after to get the
+        updated amount.
+        @dev Tricrypto pool does not have the same signature and should be handle differently.
+        @param token Token that should be removed from pool
+        @param pool Address of the curve pool to work with
+        @param amount The amount of tokens we want to swap
+        @param n Index in the coins of the pool to swap as from.
+        @param m Index in the coins of the pool to swap as to.
+        @return the new amount of tokens available
+    */
     function _exchange(
         address token,
         address pool,
@@ -543,6 +662,12 @@ contract VaultSwapper is Initializable {
         return newAmount;
     }
 
+    /**
+        @notice Wrapper around the pool function get_dy.
+        @dev Tricrypto pool does not have the same signature and should be handle differently.
+        @param lp Address of the curve LP token to work with
+        @return the pool with the relevant function, or the LP address if the pool is the LP
+    */
     function _calcExchange(
         address pool,
         uint256 amount,
@@ -555,12 +680,25 @@ contract VaultSwapper is Initializable {
         return IStableSwap(pool).get_dy(int128(n), int128(m), amount);
     }
 
+    /**
+        @notice Wrapper around the pool function get_lp_token.
+        @dev A pool can be registered either in the registry or in the factory registry, so we need to find in which it is used.
+        @param pool Address of the curve Pool to work with
+        @return the LP token address for this pool if available of the pool address as fallback
+    */
     function _getLpTokenFromPool(address pool) internal view returns (address) {
         address token = _REGISTRY.get_lp_token(pool);
         if (token != address(0x0)) return token;
         return pool;
     }
 
+    /**
+        @notice Function to get the number of coins in a specific pool.
+        @dev We cannot count on get_n_coins for the factory_registry because some pools, with coin, have a 0 return value. We have a local `num_coins` mapping
+        which is init by this function and is used if available. Otherwise we try to get and count the number of coins for a specific pool.
+        @param pool Address of the curve Pool to work with
+        @return The number of coins in this pool
+    */
     function _getNCoins(address pool) internal returns (uint256) {
         uint256 num = numCoins[pool];
         if (num != 0) return num;
@@ -581,6 +719,11 @@ contract VaultSwapper is Initializable {
         return num;
     }
 
+    /**
+        @notice Function to get the number of coins in a specific pool.
+        @param pool Address of the curve Pool to work with
+        @return The number of coins in this pool
+    */
     function _getViewNCoins(address pool) internal view returns (uint256) {
         uint256 num = numCoins[pool];
         if (num != 0) return num;
