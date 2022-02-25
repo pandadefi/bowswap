@@ -1,0 +1,4 @@
+contracts/interfaces/IATokenV2.sol
+contracts/interfaces/ICurveFactoryRegistry.sol
+contracts/interfaces/ICurveRegistry.sol
+contracts/interfaces/IStableSwap.sol

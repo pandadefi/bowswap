@@ -13,9 +13,7 @@ def test_generic_swap(
 ):
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
-    estimate = vault_swapper.estimate_out(
-        vault_from, vault_to, amount, instructions, 30
-    )
+    estimate = vault_swapper.estimateOut(vault_from, vault_to, amount, instructions, 30)
     vault_swapper.swap(vault_from, vault_to, amount, 1, instructions, {"from": user})
 
     assert vault_to.balanceOf(user) > estimate * 0.999
@@ -28,7 +26,7 @@ def test_generic_swap_no_donation(
 ):
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
-    estimate = vault_swapper.estimate_out(vault_from, vault_to, amount, instructions, 0)
+    estimate = vault_swapper.estimateOut(vault_from, vault_to, amount, instructions, 0)
     vault_swapper.swap(
         vault_from, vault_to, amount, 1, instructions, 0, 0, {"from": user}
     )
@@ -43,7 +41,7 @@ def test_generic_swap_large_donation(
 ):
     transfer(vault_from, amount, whale, user)
     vault_from.approve(vault_swapper, amount, {"from": user})
-    estimate = vault_swapper.estimate_out(
+    estimate = vault_swapper.estimateOut(
         vault_from, vault_to, amount, instructions, 5000
     )
     tx = vault_swapper.swap(
@@ -67,11 +65,9 @@ def test_generic_swap_permit(
     signature = sign_vault_permit(
         vault_from, user, str(vault_swapper), allowance=int(amount), deadline=deadline
     )
-    estimate = vault_swapper.estimate_out(
-        vault_from, vault_to, amount, instructions, 30
-    )
+    estimate = vault_swapper.estimateOut(vault_from, vault_to, amount, instructions, 30)
 
-    vault_swapper.swap_with_signature(
+    vault_swapper.swapWithSignature(
         vault_from,
         vault_to,
         amount,

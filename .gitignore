@@ -3,3 +3,4 @@ __pycache__
 build/
 node_modules/
 yarn-error.log 
+.env

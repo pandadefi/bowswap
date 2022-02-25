@@ -7,27 +7,27 @@ import click
 TRANSFERS = [
     (
         "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
-        1000 * 10 ** 18,
+        1000 * 10**18,
     ),
     (
         "0xe9dc63083c464d6edccff23444ff3cfc6886f6fb",
-        0.2 * 10 ** 18,
+        0.2 * 10**18,
     ),
     (
         "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
-        1000 * 10 ** 6,
+        1000 * 10**6,
     ),
     (
         "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
-        0.2 * 10 ** 8,
+        0.2 * 10**8,
     ),
     (
         "0x84E13785B5a27879921D6F685f041421C7F482dA",
-        0.2 * 10 ** 18,
+        0.2 * 10**18,
     ),
     (
         "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
-        200 * 10 ** 18,
+        200 * 10**18,
     ),
 ]
 
@@ -64,7 +64,7 @@ def main():
     print("VaultSwapper deployed at:" + str(swapper))
 
     to = get_address("send seed funds to")
-    dev.transfer(to, 1 * 10 ** 18)
+    dev.transfer(to, 1 * 10**18)
     for (vault, amount) in TRANSFERS:
         token = Contract(vault)
         token.transfer(to, amount, {"from": get_whale(vault)})

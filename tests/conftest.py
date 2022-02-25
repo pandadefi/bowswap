@@ -17,7 +17,7 @@ def sign_vault_permit():
         vault: Contract,
         owner: Account,  # NOTE: Must be a eth_key account, not Brownie
         spender: str,
-        allowance: int = 2 ** 256 - 1,  # Allowance to set with `permit`
+        allowance: int = 2**256 - 1,  # Allowance to set with `permit`
         deadline: int = 0,  # 0 means no time limit
         override_nonce: int = None,
     ):
