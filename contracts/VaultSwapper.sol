@@ -4,114 +4,16 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
-interface Vault is IERC20 {
-    function decimals() external view returns (uint256);
-
-    function deposit() external returns (uint256);
-
-    function deposit(uint256 amount) external returns (uint256);
-
-    function deposit(uint256 amount, address recipient)
-        external
-        returns (uint256);
-
-    function withdraw() external returns (uint256);
-
-    function withdraw(uint256 maxShares) external returns (uint256);
-
-    function withdraw(uint256 maxShares, address recipient)
-        external
-        returns (uint256);
-
-    function token() external view returns (address);
-
-    function pricePerShare() external view returns (uint256);
-
-    function totalAssets() external view returns (uint256);
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 amount,
-        uint256 expiry,
-        bytes calldata signature
-    ) external returns (bool);
-}
-
-interface StableSwap {
-    function remove_liquidity_one_coin(
-        uint256 amount,
-        int128 i,
-        uint256 min_amount
-    ) external;
-
-    function add_liquidity(uint256[2] calldata amounts, uint256 min_mint_amount)
-        external;
-
-    function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount)
-        external;
-
-    function add_liquidity(uint256[4] calldata amounts, uint256 min_mint_amount)
-        external;
-
-    function calc_withdraw_one_coin(uint256 _token_amount, int128 i)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[2] calldata amounts, bool is_deposit)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[2] calldata amounts)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[3] calldata amounts, bool is_deposit)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[3] calldata amounts)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[4] calldata amounts, bool is_deposit)
-        external
-        view
-        returns (uint256);
-
-    function calc_token_amount(uint256[4] calldata amounts)
-        external
-        view
-        returns (uint256);
-}
-
-interface Registry {
-    function get_pool_from_lp_token(address lp) external view returns (address);
-
-    function get_lp_token(address pool) external view returns (address);
-
-    function get_n_coins(address) external view returns (uint256[2] memory);
-
-    function get_coins(address) external view returns (address[8] memory);
-}
-
-interface FactoryRegistry {
-    function get_coins(address) external view returns (address[4] memory);
-
-    function get_n_coins(address) external view returns (uint256);
-}
+import "./interfaces/IVault.sol";
+import "./interfaces/IStableSwap.sol";
+import "./interfaces/ICurveRegistry.sol";
+import "./interfaces/ICurveFactoryRegistry.sol";
 
 contract VaultSwapper is Initializable {
-    Registry constant registry =
-        Registry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
-    FactoryRegistry constant factory_registry =
-        FactoryRegistry(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
+    ICurveRegistry constant registry =
+        ICurveRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5);
+    ICurveFactoryRegistry constant factory_registry =
+        ICurveFactoryRegistry(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
 
     uint256 private constant MIN_AMOUNT_OUT = 1;
     uint256 private constant MAX_DONATION = 10_000;
@@ -184,7 +86,7 @@ contract VaultSwapper is Initializable {
         uint256 origin
     ) public {
         assert(
-            Vault(from_vault).permit(
+            IVault(from_vault).permit(
                 msg.sender,
                 address(this),
                 amount,
@@ -236,18 +138,18 @@ contract VaultSwapper is Initializable {
         uint256 donation,
         uint256 origin
     ) public {
-        address underlying = Vault(from_vault).token();
-        address target = Vault(to_vault).token();
+        address underlying = IVault(from_vault).token();
+        address target = IVault(to_vault).token();
 
         address underlying_pool = _get_pool_from_lp_token(underlying);
         address target_pool = _get_pool_from_lp_token(target);
 
-        Vault(from_vault).transferFrom(msg.sender, address(this), amount);
-        uint256 underlying_amount = Vault(from_vault).withdraw(
+        IVault(from_vault).transferFrom(msg.sender, address(this), amount);
+        uint256 underlying_amount = IVault(from_vault).withdraw(
             amount,
             address(this)
         );
-        StableSwap(underlying_pool).remove_liquidity_one_coin(
+        IStableSwap(underlying_pool).remove_liquidity_one_coin(
             underlying_amount,
             1,
             1
@@ -258,7 +160,7 @@ contract VaultSwapper is Initializable {
 
         underlying_coin.approve(target_pool, liquidity_amount);
 
-        StableSwap(target_pool).add_liquidity(
+        IStableSwap(target_pool).add_liquidity(
             [0, liquidity_amount],
             MIN_AMOUNT_OUT
         );
@@ -272,7 +174,7 @@ contract VaultSwapper is Initializable {
 
         approve(target, to_vault, target_amount);
 
-        uint256 out = Vault(to_vault).deposit(target_amount, msg.sender);
+        uint256 out = IVault(to_vault).deposit(target_amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
         if (origin != UNKNOWN_ORIGIN) {
@@ -293,28 +195,28 @@ contract VaultSwapper is Initializable {
         uint256 amount,
         uint256 donation
     ) public view returns (uint256) {
-        address underlying = Vault(from_vault).token();
-        address target = Vault(to_vault).token();
+        address underlying = IVault(from_vault).token();
+        address target = IVault(to_vault).token();
 
         address underlying_pool = _get_pool_from_lp_token(underlying);
         address target_pool = _get_pool_from_lp_token(target);
 
-        uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
-        uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
+        uint256 pricePerShareFrom = IVault(from_vault).pricePerShare();
+        uint256 pricePerShareTo = IVault(to_vault).pricePerShare();
 
         uint256 amount_out = (pricePerShareFrom * amount) /
-            (10**Vault(from_vault).decimals());
-        amount_out = StableSwap(underlying_pool).calc_withdraw_one_coin(
+            (10**IVault(from_vault).decimals());
+        amount_out = IStableSwap(underlying_pool).calc_withdraw_one_coin(
             amount_out,
             1
         );
-        amount_out = StableSwap(target_pool).calc_token_amount(
+        amount_out = IStableSwap(target_pool).calc_token_amount(
             [0, amount_out],
             true
         );
         amount_out -= (amount_out * donation) / MAX_DONATION;
         return
-            (amount_out * (10**Vault(to_vault).decimals())) / pricePerShareTo;
+            (amount_out * (10**IVault(to_vault).decimals())) / pricePerShareTo;
     }
 
     function swap_with_signature(
@@ -351,7 +253,7 @@ contract VaultSwapper is Initializable {
         uint256 origin
     ) public {
         assert(
-            Vault(from_vault).permit(
+            IVault(from_vault).permit(
                 msg.sender,
                 address(this),
                 amount,
@@ -397,11 +299,11 @@ contract VaultSwapper is Initializable {
         uint256 donation,
         uint256 origin
     ) public {
-        address token = Vault(from_vault).token();
-        address target = Vault(to_vault).token();
+        address token = IVault(from_vault).token();
+        address target = IVault(to_vault).token();
 
-        Vault(from_vault).transferFrom(msg.sender, address(this), amount);
-        amount = Vault(from_vault).withdraw(amount, address(this));
+        IVault(from_vault).transferFrom(msg.sender, address(this), amount);
+        amount = IVault(from_vault).withdraw(amount, address(this));
 
         uint256 n_coins;
         for (uint256 i = 0; i < instructions.length; i++) {
@@ -412,17 +314,17 @@ contract VaultSwapper is Initializable {
                 approve(token, instructions[i].pool, amount);
 
                 if (n_coins == 2) {
-                    StableSwap(instructions[i].pool).add_liquidity(
+                    IStableSwap(instructions[i].pool).add_liquidity(
                         [list[0], list[1]],
                         1
                     );
                 } else if (n_coins == 3) {
-                    StableSwap(instructions[i].pool).add_liquidity(
+                    IStableSwap(instructions[i].pool).add_liquidity(
                         [list[0], list[1], list[2]],
                         1
                     );
                 } else if (n_coins == 4) {
-                    StableSwap(instructions[i].pool).add_liquidity(
+                    IStableSwap(instructions[i].pool).add_liquidity(
                         [list[0], list[1], list[2], list[3]],
                         1
                     );
@@ -459,7 +361,7 @@ contract VaultSwapper is Initializable {
             amount -= donating;
         }
         approve(target, to_vault, amount);
-        uint256 out = Vault(to_vault).deposit(amount, msg.sender);
+        uint256 out = IVault(to_vault).deposit(amount, msg.sender);
 
         require(out >= min_amount_out, "out too low");
         if (origin != UNKNOWN_ORIGIN) {
@@ -509,11 +411,11 @@ contract VaultSwapper is Initializable {
         Swap[] calldata instructions,
         uint256 donation
     ) public view returns (uint256) {
-        uint256 pricePerShareFrom = Vault(from_vault).pricePerShare();
-        uint256 pricePerShareTo = Vault(to_vault).pricePerShare();
+        uint256 pricePerShareFrom = IVault(from_vault).pricePerShare();
+        uint256 pricePerShareTo = IVault(to_vault).pricePerShare();
         amount =
             (amount * pricePerShareFrom) /
-            (10**Vault(from_vault).decimals());
+            (10**IVault(from_vault).decimals());
         for (uint256 i = 0; i < instructions.length; i++) {
             uint256 n_coins = _get_n_coins(instructions[i].pool);
             if (instructions[i].action == Action.Deposit) {
@@ -523,38 +425,38 @@ contract VaultSwapper is Initializable {
 
                 if (n_coins == 2) {
                     try
-                        StableSwap(instructions[i].pool).calc_token_amount(
+                        IStableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1]],
                             true
                         )
                     returns (uint256 _amount) {
                         amount = _amount;
                     } catch {
-                        amount = StableSwap(instructions[i].pool)
+                        amount = IStableSwap(instructions[i].pool)
                             .calc_token_amount([list[0], list[1]]);
                     }
                 } else if (n_coins == 3) {
                     try
-                        StableSwap(instructions[i].pool).calc_token_amount(
+                        IStableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1], list[2]],
                             true
                         )
                     returns (uint256 _amount) {
                         amount = _amount;
                     } catch {
-                        amount = StableSwap(instructions[i].pool)
+                        amount = IStableSwap(instructions[i].pool)
                             .calc_token_amount([list[0], list[1], list[2]]);
                     }
                 } else if (n_coins == 4) {
                     try
-                        StableSwap(instructions[i].pool).calc_token_amount(
+                        IStableSwap(instructions[i].pool).calc_token_amount(
                             [list[0], list[1], list[2], list[3]],
                             true
                         )
                     returns (uint256 _amount) {
                         amount = _amount;
                     } catch {
-                        amount = StableSwap(instructions[i].pool)
+                        amount = IStableSwap(instructions[i].pool)
                             .calc_token_amount(
                                 [list[0], list[1], list[2], list[3]]
                             );
@@ -576,7 +478,7 @@ contract VaultSwapper is Initializable {
             }
         }
         amount -= (amount * donation) / MAX_DONATION;
-        return (amount * (10**Vault(to_vault).decimals())) / pricePerShareTo;
+        return (amount * (10**IVault(to_vault).decimals())) / pricePerShareTo;
     }
 
     function approve(
