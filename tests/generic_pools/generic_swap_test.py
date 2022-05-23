@@ -1,6 +1,6 @@
 import pytest
-import brownie
-from brownie import chain, Contract
+import ape
+from ape import chain, Contract
 from eth_account import Account
 
 

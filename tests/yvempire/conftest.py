@@ -1,7 +1,7 @@
 import pytest
 
-from brownie import config
-from brownie import Contract
+from ape import config
+from ape import Contract
 
 
 @pytest.fixture
@@ -79,8 +79,3 @@ def get_ausdt(ausdt, ausdt_whale):
         assert ausdt.balanceOf(to) >= amount
 
     yield get_ausdt
-
-
-@pytest.fixture(scope="function", autouse=True)
-def shared_setup(fn_isolation):
-    pass

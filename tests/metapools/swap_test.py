@@ -1,11 +1,11 @@
 import pytest
-import brownie
-from brownie import chain, Contract
+import ape
+from ape import chain, Contract
 from eth_account import Account
 
 
 def transfer(token, amount, whale, to):
-    token.transfer(to, amount, {"from": whale, "gas_price": 0})
+    token.transfer(to, amount, sender=whale, gas_price=0)
 
 
 def test_metapool_swap(user, vault_from, vault_to, whale, vault_swapper, amount, gov):
@@ -14,7 +14,7 @@ def test_metapool_swap(user, vault_from, vault_to, whale, vault_swapper, amount,
     # gets a estimate of the amount out
     estimate = vault_swapper.metapoolEstimateOut(vault_from, vault_to, amount, 30)
     # Makes sure it revert if amout out is too small
-    with brownie.reverts():
+    with ape.reverts():
         vault_swapper.metapoolSwap(
             vault_from, vault_to, amount, amount * 1.1, {"from": user}
         )
@@ -36,7 +36,7 @@ def test_metapool_swap_no_donation(
     # gets a estimate of the amount out
     estimate = vault_swapper.metapoolEstimateOut(vault_from, vault_to, amount, 0)
     # Makes sure it revert if amout out is too small
-    with brownie.reverts():
+    with ape.reverts():
         vault_swapper.metapoolSwap(
             vault_from, vault_to, amount, amount * 1.1, {"from": user}
         )
@@ -58,7 +58,7 @@ def test_metapool_swap_large_donation(
     # gets a estimate of the amount out
     estimate = vault_swapper.metapoolEstimateOut(vault_from, vault_to, amount, 5000)
     # Makes sure it revert if amout out is too small
-    with brownie.reverts():
+    with ape.reverts():
         vault_swapper.metapoolSwap(
             vault_from, vault_to, amount, amount * 1.1, {"from": user}
         )

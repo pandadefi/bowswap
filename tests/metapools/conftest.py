@@ -2,7 +2,7 @@ import pytest
 import itertools
 import requests
 
-from brownie import Contract
+from ape import Contract
 
 CRV_META_3USD_VAULT = [
     "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417",
@@ -81,12 +81,8 @@ def amount(vault_from):
 
 
 @pytest.fixture
-def vault_swapper(gov, VaultSwapper):
-    swapper = gov.deploy(VaultSwapper)
+def vault_swapper(gov, project):
+    swapper = gov.deploy(project.VaultSwapper)
     swapper.initialize(gov)
     yield swapper
 
-
-@pytest.fixture(scope="function", autouse=True)
-def shared_setup(fn_isolation):
-    pass

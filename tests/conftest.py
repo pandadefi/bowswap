@@ -1,7 +1,8 @@
 import pytest
 from eth_account import Account
 
-from brownie import Contract, web3, chain
+from ape import Contract, chain
+from web3 import Web3
 from eth_account.messages import encode_structured_data
 
 

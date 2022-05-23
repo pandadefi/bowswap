@@ -2,7 +2,7 @@ import pytest
 import itertools
 import requests
 
-from brownie import Contract
+from ape import Contract
 
 ALL_PAIRS = [
     [
@@ -123,12 +123,9 @@ def amount(vault_from):
 
 
 @pytest.fixture
-def vault_swapper(gov, VaultSwapper):
-    swapper = gov.deploy(VaultSwapper)
-    swapper.initialize(gov)
+def vault_swapper(gov, project):
+    swapper = gov.deploy(project.VaultSwapper)
+    swapper.initialize(gov, sender=gov)
     yield swapper
 
 
-@pytest.fixture(scope="function", autouse=True)
-def shared_setup(fn_isolation):
-    pass

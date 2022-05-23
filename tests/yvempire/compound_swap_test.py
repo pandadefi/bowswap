@@ -1,6 +1,5 @@
 import pytest
-import brownie
-from brownie import Contract
+from ape import Contract
 
 
 def test_swap(user, cusdc, get_cusdc, yv_empire):

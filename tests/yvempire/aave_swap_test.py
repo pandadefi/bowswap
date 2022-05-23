@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract
+from ape import Contract
 
 
 def test_v1_swap(user, ausdt, get_ausdt, yv_empire):
