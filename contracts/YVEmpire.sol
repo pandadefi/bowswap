@@ -21,17 +21,24 @@ contract YVEmpire {
         address coin;
     }
 
-    constructor(address registry, address lendingPoolV2, address lendingPoolV3) {
+    constructor(
+        address registry,
+        address lendingPoolV2,
+        address lendingPoolV3
+    ) {
         _registry = IYearnRegistry(registry);
         _lendingPoolV2 = ILendingPool(lendingPoolV2);
         _lendingPoolV3 = ILendingPool(lendingPoolV3);
     }
 
-    function migrate(Swap calldata swap) external returns(uint256) {
+    function migrate(Swap calldata swap) external returns (uint256) {
         return _migrate(swap);
     }
 
-    function migrate(Swap[] calldata swaps) external returns(uint256[] memory) {
+    function migrate(Swap[] calldata swaps)
+        external
+        returns (uint256[] memory)
+    {
         uint256 length = swaps.length;
         uint256[] memory amounts = new uint256[](length);
 
@@ -41,7 +48,7 @@ contract YVEmpire {
         return amounts;
     }
 
-    function _migrate(Swap calldata swap) internal returns(uint256) {
+    function _migrate(Swap calldata swap) internal returns (uint256) {
         address underlying;
         if (swap.service == 0) {
             underlying = _swapCompound(swap.coin);
@@ -66,14 +73,14 @@ contract YVEmpire {
         return amount;
     }
 
-    function _depositIntoVault(address token) internal returns(uint256) {
+    function _depositIntoVault(address token) internal returns (uint256) {
         uint256 balance = IERC20(token).balanceOf(address(this));
         IVault vault = IVault(_registry.latestVault(address(token)));
         SafeERC20.safeApprove(IERC20(token), address(vault), balance);
         return vault.deposit(balance, msg.sender);
     }
 
-    function _swapCompound(address coin) internal returns(address) {
+    function _swapCompound(address coin) internal returns (address) {
         uint256 amount = _transferToSelf(coin);
         ICToken cToken = ICToken(coin);
         require(cToken.redeem(amount) == 0, "!redeem");
@@ -81,7 +88,7 @@ contract YVEmpire {
         return cToken.underlying();
     }
 
-    function _swapAaveV1(address coin) internal returns(address) {
+    function _swapAaveV1(address coin) internal returns (address) {
         _transferToSelf(coin);
         IATokenV1 aToken = IATokenV1(coin);
         aToken.redeem(type(uint256).max);
@@ -89,14 +96,13 @@ contract YVEmpire {
         return aToken.underlyingAssetAddress();
     }
 
-    function _swapAave(address coin, ILendingPool lendingPool) internal returns(address) {
+    function _swapAave(address coin, ILendingPool lendingPool)
+        internal
+        returns (address)
+    {
         _transferToSelf(coin);
         address underlying = IATokenV2(coin).UNDERLYING_ASSET_ADDRESS();
-        lendingPool.withdraw(
-            underlying,
-            type(uint256).max,
-            address(this)
-        );
+        lendingPool.withdraw(underlying, type(uint256).max, address(this));
         return underlying;
     }
 }
