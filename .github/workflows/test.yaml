@@ -28,7 +28,7 @@ jobs:
         node-version: '14.x'
 
     - name: Install ganache
-      run: yarn add ganache --global
+      run:  npm install ganache --global
 
     - name: Set up python 3.8
       uses: actions/setup-python@v2
