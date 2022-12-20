@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.11;
+pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -12,31 +12,47 @@ import "./interfaces/IVault.sol";
 import "./interfaces/IYearnRegistry.sol";
 
 contract YVEmpire {
-    IYearnRegistry private constant _REGISTRY =
-        IYearnRegistry(0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804);
-    ILendingPool private constant _LENDING_POOL =
-        ILendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
+    IYearnRegistry private immutable _registry;
+    ILendingPool private immutable _lendingPoolV2;
+    ILendingPool private immutable _lendingPoolV3;
 
-    enum Service {
-        Compound,
-        Aavev1,
-        Aavev2
-    }
     struct Swap {
-        Service service;
+        uint8 service;
         address coin;
     }
 
-    function migrate(Swap[] calldata swaps) public {
-        for (uint256 i = 0; i < swaps.length; i++) {
-            if (swaps[i].service == Service.Compound) {
-                _swapCompound(swaps[i].coin);
-            } else if (swaps[i].service == Service.Aavev1) {
-                _swapAaveV1(swaps[i].coin);
-            } else if (swaps[i].service == Service.Aavev2) {
-                _swapAaveV2(swaps[i].coin);
-            }
+    constructor(address registry, address lendingPoolV2, address lendingPoolV3) {
+        _registry = IYearnRegistry(registry);
+        _lendingPoolV2 = ILendingPool(lendingPoolV2);
+        _lendingPoolV3 = ILendingPool(lendingPoolV3);
+    }
+
+    function migrate(Swap calldata swap) external returns(uint256) {
+        return _migrate(swap);
+    }
+
+    function migrate(Swap[] calldata swaps) external returns(uint256[] memory) {
+        uint256 length = swaps.length;
+        uint256[] memory amounts = new uint256[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            amounts[i] = _migrate(swaps[i]);
         }
+        return amounts;
+    }
+
+    function _migrate(Swap calldata swap) internal returns(uint256) {
+        address underlying;
+        if (swap.service == 0) {
+            underlying = _swapCompound(swap.coin);
+        } else if (swap.service == 1) {
+            underlying = _swapAaveV1(swap.coin);
+        } else if (swap.service == 2) {
+            underlying = _swapAave(swap.coin, _lendingPoolV2);
+        } else if (swap.service == 3) {
+            underlying = _swapAave(swap.coin, _lendingPoolV3);
+        }
+        return _depositIntoVault(underlying);
     }
 
     function _transferToSelf(address coin) internal returns (uint256) {
@@ -50,50 +66,37 @@ contract YVEmpire {
         return amount;
     }
 
-    function _approve(
-        IERC20 token,
-        address spender,
-        uint256 amount
-    ) internal {
-        if (token.allowance(address(this), spender) < amount) {
-            SafeERC20.safeApprove(token, spender, type(uint256).max);
-        }
+    function _depositIntoVault(address token) internal returns(uint256) {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        IVault vault = IVault(_registry.latestVault(address(token)));
+        SafeERC20.safeApprove(IERC20(token), address(vault), balance);
+        return vault.deposit(balance, msg.sender);
     }
 
-    function _depositIntoVault(IERC20 token) internal {
-        uint256 balance = token.balanceOf(address(this));
-        IVault vault = IVault(_REGISTRY.latestVault(address(token)));
-        _approve(token, address(vault), balance);
-        uint256 vaultBalance = vault.deposit(balance);
-        vault.transfer(msg.sender, vaultBalance);
-    }
-
-    function _swapCompound(address coin) internal {
+    function _swapCompound(address coin) internal returns(address) {
         uint256 amount = _transferToSelf(coin);
         ICToken cToken = ICToken(coin);
-        IERC20 underlying = IERC20(cToken.underlying());
         require(cToken.redeem(amount) == 0, "!redeem");
 
-        _depositIntoVault(underlying);
+        return cToken.underlying();
     }
 
-    function _swapAaveV1(address coin) internal {
+    function _swapAaveV1(address coin) internal returns(address) {
         _transferToSelf(coin);
         IATokenV1 aToken = IATokenV1(coin);
-        IERC20 underlying = IERC20(aToken.underlyingAssetAddress());
         aToken.redeem(type(uint256).max);
 
-        _depositIntoVault(underlying);
+        return aToken.underlyingAssetAddress();
     }
 
-    function _swapAaveV2(address coin) internal {
+    function _swapAave(address coin, ILendingPool lendingPool) internal returns(address) {
         _transferToSelf(coin);
-        IERC20 underlying = IERC20(IATokenV2(coin).UNDERLYING_ASSET_ADDRESS());
-        _LENDING_POOL.withdraw(
-            address(underlying),
+        address underlying = IATokenV2(coin).UNDERLYING_ASSET_ADDRESS();
+        lendingPool.withdraw(
+            underlying,
             type(uint256).max,
             address(this)
         );
-        _depositIntoVault(underlying);
+        return underlying;
     }
 }

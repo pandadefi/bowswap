@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.11;
+pragma solidity 0.8.17;
 
 interface ICToken {
     function redeem(uint256 redeemTokens) external returns (uint256);

@@ -1,6 +1,6 @@
 # bowswap.finance
 
-Swap between crv-metapool vaults.
+Swap between crv-metapool vaults or bring your aave/compond tokens to yearn.
 [bowswap.finance](https://bowswap.finance)
 
 ## deployments

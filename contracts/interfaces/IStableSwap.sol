@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.11;
+pragma solidity 0.8.17;
 
 interface IStableSwap {
     function remove_liquidity_one_coin(

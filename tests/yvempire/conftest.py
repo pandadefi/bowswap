@@ -19,9 +19,29 @@ def vaults(request):
     yield request.param
 
 
+@pytest.fixture()
+def registry():
+    yield Contract("0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804")
+
+
 @pytest.fixture
-def yv_empire(gov, YVEmpire):
-    yield gov.deploy(YVEmpire)
+def yv_empire(gov, YVEmpire, registry):
+    yield gov.deploy(
+        YVEmpire,
+        registry,
+        "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+        "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+    )
+
+
+@pytest.fixture()
+def usdc():
+    yield Contract("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
+
+
+@pytest.fixture()
+def usdt():
+    yield Contract("0xdac17f958d2ee523a2206206994597c13d831ec7")
 
 
 @pytest.fixture()

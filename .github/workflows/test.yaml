@@ -27,8 +27,8 @@ jobs:
       with:
         node-version: '12.x'
 
-    - name: Install hardhat
-      run: yarn add hardhat --dev
+    - name: Install ganache
+      run: yarn add ganache --global
 
     - name: Set up python 3.8
       uses: actions/setup-python@v2
