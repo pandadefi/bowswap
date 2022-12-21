@@ -12,4 +12,12 @@ interface ICToken {
         returns (uint256);
 
     function underlying() external view returns (address);
+
+    function getCash() external view returns (uint256);
+
+    function totalBorrows() external view returns (uint256);
+
+    function totalReserves() external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
 }
